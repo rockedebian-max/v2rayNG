@@ -46,10 +46,6 @@
         android:title="@string/title_del_invalid_config"
         app:showAsAction="never" />
     <item
-        android:id="@+id/intelligent_selection_all"
-        android:title="@string/title_create_intelligent_selection_all_server"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/ping_all"
         android:title="@string/title_ping_all_server"
         app:showAsAction="never" />
