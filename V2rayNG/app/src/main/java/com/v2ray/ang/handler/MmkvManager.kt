@@ -11,6 +11,7 @@ import com.v2ray.ang.dto.ServerAffiliationInfo
 import com.v2ray.ang.dto.SubscriptionCache
 import com.v2ray.ang.dto.SubscriptionItem
 import com.v2ray.ang.dto.WebDavConfig
+import com.v2ray.ang.util.CryptoHelper
 import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.Utils
 
@@ -95,9 +96,21 @@ object MmkvManager {
         if (guid.isBlank()) {
             return null
         }
-        val json = profileFullStorage.decodeString(guid)
-        if (json.isNullOrBlank()) {
+        val stored = profileFullStorage.decodeString(guid)
+        if (stored.isNullOrBlank()) {
             return null
+        }
+        // Phase 2: Try decrypting first, fall back to plain JSON for legacy configs
+        val json = if (CryptoHelper.isEncrypted(stored)) {
+            CryptoHelper.decrypt(stored) ?: return null
+        } else {
+            // Legacy unencrypted config - re-encrypt it
+            val config = JsonUtil.fromJson(stored, ProfileItem::class.java)
+            if (config != null) {
+                val encrypted = CryptoHelper.encrypt(stored)
+                profileFullStorage.encode(guid, encrypted)
+            }
+            stored
         }
         return JsonUtil.fromJson(json, ProfileItem::class.java)
     }
@@ -122,7 +135,10 @@ object MmkvManager {
      */
     fun encodeServerConfig(guid: String, config: ProfileItem): String {
         val key = guid.ifBlank { Utils.getUuid() }
-        profileFullStorage.encode(key, JsonUtil.toJson(config))
+        // Phase 2: Encrypt config JSON before storing
+        val json = JsonUtil.toJson(config)
+        val encrypted = CryptoHelper.encrypt(json)
+        profileFullStorage.encode(key, encrypted)
         val serverList = decodeServerList()
         if (!serverList.contains(key)) {
             serverList.add(0, key)

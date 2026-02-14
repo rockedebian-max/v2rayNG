@@ -36,19 +36,9 @@ object AngConfigManager {
      * @return The result code.
      */
     fun share2Clipboard(context: Context, guid: String): Int {
-        try {
-            val conf = shareConfig(guid)
-            if (TextUtils.isEmpty(conf)) {
-                return -1
-            }
-
-            Utils.setClipboard(context, conf)
-
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to share config to clipboard", e)
-            return -1
-        }
-        return 0
+        // Phase 2: Export blocked
+        Log.w(AppConfig.TAG, "Config export is disabled")
+        return -1
     }
 
     /**
@@ -59,24 +49,9 @@ object AngConfigManager {
      * @return The number of configurations shared.
      */
     fun shareNonCustomConfigsToClipboard(context: Context, serverList: List<String>): Int {
-        try {
-            val sb = StringBuilder()
-            for (guid in serverList) {
-                val url = shareConfig(guid)
-                if (TextUtils.isEmpty(url)) {
-                    continue
-                }
-                sb.append(url)
-                sb.appendLine()
-            }
-            if (sb.count() > 0) {
-                Utils.setClipboard(context, sb.toString())
-            }
-            return sb.lines().count() - 1
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to share non-custom configs to clipboard", e)
-            return -1
-        }
+        // Phase 2: Export blocked
+        Log.w(AppConfig.TAG, "Config export is disabled")
+        return -1
     }
 
     /**
@@ -86,17 +61,9 @@ object AngConfigManager {
      * @return The QR code bitmap.
      */
     fun share2QRCode(guid: String): Bitmap? {
-        try {
-            val conf = shareConfig(guid)
-            if (TextUtils.isEmpty(conf)) {
-                return null
-            }
-            return QRCodeDecoder.createQRCode(conf)
-
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to share config as QR code", e)
-            return null
-        }
+        // Phase 2: QR export blocked
+        Log.w(AppConfig.TAG, "QR code export is disabled")
+        return null
     }
 
     /**
@@ -107,19 +74,9 @@ object AngConfigManager {
      * @return The result code.
      */
     fun shareFullContent2Clipboard(context: Context, guid: String?): Int {
-        try {
-            if (guid == null) return -1
-            val result = V2rayConfigManager.getV2rayConfig(context, guid)
-            if (result.status) {
-                Utils.setClipboard(context, result.content)
-            } else {
-                return -1
-            }
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to share full content to clipboard", e)
-            return -1
-        }
-        return 0
+        // Phase 2: Full content export blocked
+        Log.w(AppConfig.TAG, "Full content export is disabled")
+        return -1
     }
 
     /**
@@ -129,26 +86,8 @@ object AngConfigManager {
      * @return The configuration string.
      */
     private fun shareConfig(guid: String): String {
-        try {
-            val config = MmkvManager.decodeServerConfig(guid) ?: return ""
-
-            return config.configType.protocolScheme + when (config.configType) {
-                EConfigType.VMESS -> VmessFmt.toUri(config)
-                EConfigType.CUSTOM -> ""
-                EConfigType.SHADOWSOCKS -> ShadowsocksFmt.toUri(config)
-                EConfigType.SOCKS -> SocksFmt.toUri(config)
-                EConfigType.HTTP -> ""
-                EConfigType.VLESS -> VlessFmt.toUri(config)
-                EConfigType.TROJAN -> TrojanFmt.toUri(config)
-                EConfigType.WIREGUARD -> WireguardFmt.toUri(config)
-                EConfigType.HYSTERIA2 -> Hysteria2Fmt.toUri(config)
-                EConfigType.POLICYGROUP -> ""
-                else -> {}
-            }
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to share config for GUID: $guid", e)
-            return ""
-        }
+        // Phase 2: Config sharing blocked
+        return ""
     }
 
     /**

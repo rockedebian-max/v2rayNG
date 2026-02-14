@@ -24,7 +24,6 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.databinding.ActivityMainBinding
-import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.PermissionType
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastError
@@ -247,55 +246,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             true
         }
 
-        R.id.import_manually_policy_group -> {
-            importManually(EConfigType.POLICYGROUP.value)
-            true
-        }
-
-        R.id.import_manually_vmess -> {
-            importManually(EConfigType.VMESS.value)
-            true
-        }
-
-        R.id.import_manually_vless -> {
-            importManually(EConfigType.VLESS.value)
-            true
-        }
-
-        R.id.import_manually_ss -> {
-            importManually(EConfigType.SHADOWSOCKS.value)
-            true
-        }
-
-        R.id.import_manually_socks -> {
-            importManually(EConfigType.SOCKS.value)
-            true
-        }
-
-        R.id.import_manually_http -> {
-            importManually(EConfigType.HTTP.value)
-            true
-        }
-
-        R.id.import_manually_trojan -> {
-            importManually(EConfigType.TROJAN.value)
-            true
-        }
-
-        R.id.import_manually_wireguard -> {
-            importManually(EConfigType.WIREGUARD.value)
-            true
-        }
-
-        R.id.import_manually_hysteria2 -> {
-            importManually(EConfigType.HYSTERIA2.value)
-            true
-        }
-
-        R.id.export_all -> {
-            exportAll()
-            true
-        }
+        // Phase 2: Manual import and export removed
 
         R.id.ping_all -> {
             toast(getString(R.string.connection_test_testing_count, mainViewModel.serversCache.count()))
@@ -450,20 +401,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             }
         }
         return true
-    }
-
-    private fun exportAll() {
-        showLoading()
-        lifecycleScope.launch(Dispatchers.IO) {
-            val ret = mainViewModel.exportAllServer()
-            launch(Dispatchers.Main) {
-                if (ret > 0)
-                    toast(getString(R.string.title_export_config_count, ret))
-                else
-                    toastError(R.string.toast_failure)
-                hideLoading()
-            }
-        }
     }
 
     private fun delAllConfig() {
