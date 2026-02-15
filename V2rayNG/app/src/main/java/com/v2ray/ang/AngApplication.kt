@@ -8,6 +8,7 @@ import com.tencent.mmkv.MMKV
 import com.v2ray.ang.AppConfig.ANG_PACKAGE
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.util.CryptoHelper
+import com.v2ray.ang.util.DeviceManager
 
 class AngApplication : MultiDexApplication() {
     companion object {
@@ -35,8 +36,8 @@ class AngApplication : MultiDexApplication() {
 
         MMKV.initialize(this)
 
-        // Phase 2: Initialize encryption
-        CryptoHelper.init()
+        // Phase 3: Initialize encryption with device-specific seed
+        CryptoHelper.init(DeviceManager.getDeviceSeed(this))
 
         // Ensure critical preference defaults are present in MMKV early
         SettingsManager.ensureDefaultSettings()

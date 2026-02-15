@@ -60,13 +60,17 @@ class MainRecyclerAdapter(
             holder.itemMainBinding.tvStatistics.text = getAddress(profile)
             holder.itemMainBinding.tvType.text = profile.configType.name
 
-            //TestResult
+            //TestResult - Phase 4: Enhanced visual indicators
             val aff = MmkvManager.decodeServerAffiliationInfo(guid)
-            holder.itemMainBinding.tvTestResult.text = aff?.getTestDelayString().orEmpty()
-            if ((aff?.testDelayMillis ?: 0L) < 0L) {
+            val delayMs = aff?.testDelayMillis ?: 0L
+            if (delayMs > 0L) {
+                holder.itemMainBinding.tvTestResult.text = "\u2713 ${delayMs}ms"
+                holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPing))
+            } else if (delayMs < 0L) {
+                holder.itemMainBinding.tvTestResult.text = "\u2717 Error"
                 holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPingRed))
             } else {
-                holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPing))
+                holder.itemMainBinding.tvTestResult.text = ""
             }
 
             //layoutIndicator

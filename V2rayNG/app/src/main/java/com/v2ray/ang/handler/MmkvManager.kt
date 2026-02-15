@@ -100,19 +100,32 @@ object MmkvManager {
         if (stored.isNullOrBlank()) {
             return null
         }
-        // Phase 2: Try decrypting first, fall back to plain JSON for legacy configs
-        val json = if (CryptoHelper.isEncrypted(stored)) {
-            CryptoHelper.decrypt(stored) ?: return null
-        } else {
-            // Legacy unencrypted config - re-encrypt it
-            val config = JsonUtil.fromJson(stored, ProfileItem::class.java)
-            if (config != null) {
-                val encrypted = CryptoHelper.encrypt(stored)
-                profileFullStorage.encode(guid, encrypted)
+
+        // Phase 3: Try decrypting with current device seed first
+        if (CryptoHelper.isEncrypted(stored)) {
+            val json = CryptoHelper.decrypt(stored)
+            if (json != null) {
+                return JsonUtil.fromJson(json, ProfileItem::class.java)
             }
-            stored
+            // Phase 3 migration: current seed failed, try legacy seed
+            val legacyJson = CryptoHelper.decryptWithSeed(stored, "v2rayNG-custom-vpn-2024")
+            if (legacyJson != null) {
+                // Re-encrypt with current device seed
+                val reEncrypted = CryptoHelper.encrypt(legacyJson)
+                profileFullStorage.encode(guid, reEncrypted)
+                return JsonUtil.fromJson(legacyJson, ProfileItem::class.java)
+            }
+            // Both failed - config is unrecoverable
+            return null
         }
-        return JsonUtil.fromJson(json, ProfileItem::class.java)
+
+        // Legacy unencrypted config (pre-Phase 2) - re-encrypt with current seed
+        val config = JsonUtil.fromJson(stored, ProfileItem::class.java)
+        if (config != null) {
+            val encrypted = CryptoHelper.encrypt(stored)
+            profileFullStorage.encode(guid, encrypted)
+        }
+        return config
     }
 
 //    fun decodeProfileConfig(guid: String): ProfileLiteItem? {

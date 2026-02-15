@@ -42,6 +42,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var keywordFilter = ""
     val serversCache = mutableListOf<ServersCache>()
     val isRunning by lazy { MutableLiveData<Boolean>() }
+    val isTesting by lazy { MutableLiveData<Boolean>() }
     val updateListAction by lazy { MutableLiveData<Int>() }
     val updateTestResultAction by lazy { MutableLiveData<String>() }
     private val tcpingTestScope by lazy { CoroutineScope(Dispatchers.IO) }
@@ -235,11 +236,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         MessageUtil.sendMsg2TestService(getApplication(), AppConfig.MSG_MEASURE_CONFIG_CANCEL, "")
         MmkvManager.clearAllTestDelayResults(serversCache.map { it.guid }.toList())
         updateListAction.value = -1
+        isTesting.value = true
 
         val serversCopy = serversCache.toList()
         viewModelScope.launch(Dispatchers.Default) {
             val guids = ArrayList<String>(serversCopy.map { it.guid })
             if (guids.isEmpty()) {
+                withContext(Dispatchers.Main) { isTesting.value = false }
                 return@launch
             }
             MessageUtil.sendMsg2TestService(getApplication(), AppConfig.MSG_MEASURE_CONFIG, guids)
@@ -415,11 +418,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 removeInvalidServer()
             }
 
-            if (MmkvManager.decodeSettingsBool(AppConfig.PREF_AUTO_SORT_AFTER_TEST)) {
-                sortByTestResults()
-            }
+            // Phase 4: Always auto-sort by test results after testing
+            sortByTestResults()
 
             withContext(Dispatchers.Main) {
+                isTesting.value = false
                 reloadServerList()
             }
         }

@@ -112,6 +112,40 @@ object CryptoHelper {
     }
 
     /**
+     * Decrypts using a specific seed (for migration purposes).
+     * Used when transitioning from one seed to another.
+     *
+     * @param encrypted The Base64-encoded encrypted string
+     * @param seed The specific seed to use for decryption
+     * @return Decrypted plaintext string, or null on failure
+     */
+    fun decryptWithSeed(encrypted: String, seed: String): String? {
+        return try {
+            val data = Base64.decode(encrypted, Base64.NO_WRAP)
+            if (data.size < SALT_LENGTH + IV_LENGTH + 1) {
+                return null
+            }
+
+            val salt = data.copyOfRange(0, SALT_LENGTH)
+            val iv = data.copyOfRange(SALT_LENGTH, SALT_LENGTH + IV_LENGTH)
+            val ciphertext = data.copyOfRange(SALT_LENGTH + IV_LENGTH, data.size)
+
+            val spec = PBEKeySpec(seed.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH)
+            val factory = SecretKeyFactory.getInstance(KEY_DERIVATION)
+            val keyBytes = factory.generateSecret(spec).encoded
+            val key = SecretKeySpec(keyBytes, KEY_ALGORITHM)
+
+            val cipher = Cipher.getInstance(ALGORITHM)
+            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_LENGTH, iv))
+            val plaintext = cipher.doFinal(ciphertext)
+            String(plaintext, Charsets.UTF_8)
+        } catch (e: Exception) {
+            Log.e(TAG, "Decryption with custom seed failed", e)
+            null
+        }
+    }
+
+    /**
      * Checks if a string looks like it's encrypted (Base64 + minimum length).
      */
     fun isEncrypted(data: String): Boolean {
