@@ -38,6 +38,7 @@ import com.v2ray.ang.handler.V2RayServiceManager
 import com.v2ray.ang.util.Utils
 import com.v2ray.ang.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,6 +52,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private lateinit var groupPagerAdapter: GroupPagerAdapter
     private var tabMediator: TabLayoutMediator? = null
     private var connectingAnimator: AnimatorSet? = null
+    private var terminalJob: Job? = null
 
     private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) {
@@ -221,46 +223,80 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             // Show visual indicators
             binding.progressBar.visibility = View.VISIBLE
             binding.progressConnecting.visibility = View.VISIBLE
+            binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_connecting)
             startConnectingAnimation()
+            startTerminal(!wasRunning)
             return
         }
 
         // Hide loading indicators
         binding.fab.isClickable = true
         binding.progressConnecting.visibility = View.GONE
+        hideTerminal()
 
         if (isRunning) {
             binding.fab.setIconResource(R.drawable.ic_stop_24dp)
             binding.fab.text = getString(R.string.btn_disconnect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_active))
             binding.fab.contentDescription = getString(R.string.btn_disconnect)
+            binding.fab.elevation = 12f
+            binding.fab.outlineAmbientShadowColor = ContextCompat.getColor(this, R.color.color_fab_active)
+            binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, R.color.color_fab_active)
             binding.progressBar.visibility = View.INVISIBLE
             setTestState(getString(R.string.connection_connected))
+            binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_on)
+            binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_active))
             binding.layoutTest.isFocusable = true
         } else {
             binding.fab.setIconResource(R.drawable.ic_play_24dp)
             binding.fab.text = getString(R.string.btn_connect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_inactive))
             binding.fab.contentDescription = getString(R.string.btn_connect)
+            binding.fab.elevation = 6f
+            binding.fab.outlineAmbientShadowColor = ContextCompat.getColor(this, android.R.color.transparent)
+            binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, android.R.color.transparent)
             binding.progressBar.visibility = View.INVISIBLE
             setTestState(getString(R.string.connection_not_connected))
+            binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_off)
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
+            binding.tvToolbarSubtitle.setTextColor(typedValue.data)
             binding.layoutTest.isFocusable = false
         }
     }
 
     private fun startConnectingAnimation() {
-        val pulseX = PropertyValuesHolder.ofFloat("scaleX", 1f, 1.06f, 1f)
-        val pulseY = PropertyValuesHolder.ofFloat("scaleY", 1f, 1.06f, 1f)
-        val pulseAlpha = PropertyValuesHolder.ofFloat("alpha", 1f, 0.75f, 1f)
+        // Phase 1: Scale up + fade
+        val pulseUp = ObjectAnimator.ofPropertyValuesHolder(
+            binding.fab,
+            PropertyValuesHolder.ofFloat("scaleX", 1f, 1.12f),
+            PropertyValuesHolder.ofFloat("scaleY", 1f, 1.12f),
+            PropertyValuesHolder.ofFloat("alpha", 1f, 0.6f)
+        ).apply {
+            duration = 600
+            interpolator = AccelerateDecelerateInterpolator()
+        }
 
-        val animator = ObjectAnimator.ofPropertyValuesHolder(binding.fab, pulseX, pulseY, pulseAlpha).apply {
-            duration = 1200
-            repeatCount = ObjectAnimator.INFINITE
+        // Phase 2: Scale back + restore
+        val pulseDown = ObjectAnimator.ofPropertyValuesHolder(
+            binding.fab,
+            PropertyValuesHolder.ofFloat("scaleX", 1.12f, 1f),
+            PropertyValuesHolder.ofFloat("scaleY", 1.12f, 1f),
+            PropertyValuesHolder.ofFloat("alpha", 0.6f, 1f)
+        ).apply {
+            duration = 600
             interpolator = AccelerateDecelerateInterpolator()
         }
 
         connectingAnimator = AnimatorSet().apply {
-            play(animator)
+            playSequentially(pulseUp, pulseDown)
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    if (connectingAnimator != null) {
+                        start()
+                    }
+                }
+            })
             start()
         }
     }
@@ -271,6 +307,47 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.fab.scaleX = 1f
         binding.fab.scaleY = 1f
         binding.fab.alpha = 1f
+    }
+
+    private fun startTerminal(isConnecting: Boolean) {
+        terminalJob?.cancel()
+        val lines = resources.getStringArray(
+            if (isConnecting) R.array.terminal_connecting else R.array.terminal_disconnecting
+        )
+        binding.tvTerminal.text = ""
+        binding.cardTerminal.visibility = View.VISIBLE
+
+        terminalJob = lifecycleScope.launch {
+            val sb = StringBuilder()
+            for (line in lines) {
+                // Type each character
+                for (ch in line) {
+                    sb.append(ch)
+                    binding.tvTerminal.text = sb.toString() + "█"
+                    delay(if (ch == '…' || ch == '—') 60L else 18L)
+                }
+                // End line
+                sb.append("\n")
+                binding.tvTerminal.text = sb.toString()
+                delay(350L)
+            }
+            // Keep visible briefly then fade
+            delay(1500L)
+            hideTerminal()
+        }
+    }
+
+    private fun hideTerminal() {
+        terminalJob?.cancel()
+        terminalJob = null
+        binding.cardTerminal.animate()
+            .alpha(0f)
+            .setDuration(400)
+            .withEndAction {
+                binding.cardTerminal.visibility = View.GONE
+                binding.cardTerminal.alpha = 1f
+            }
+            .start()
     }
 
     override fun onResume() {
@@ -424,6 +501,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
     override fun onDestroy() {
         stopConnectingAnimation()
+        terminalJob?.cancel()
         tabMediator?.detach()
         super.onDestroy()
     }

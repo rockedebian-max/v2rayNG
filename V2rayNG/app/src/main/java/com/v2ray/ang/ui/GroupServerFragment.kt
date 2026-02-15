@@ -191,7 +191,7 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
             return
         }
 
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE)) {
+        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {
             AlertDialog.Builder(ownerActivity).setMessage(R.string.del_config_comfirm)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     removeServerSub(guid, position)

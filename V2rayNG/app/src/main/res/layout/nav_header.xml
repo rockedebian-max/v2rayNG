@@ -7,12 +7,12 @@
     android:orientation="vertical"
     android:padding="@dimen/padding_spacing_dp16">
 
-    <!-- Brand icon glow effect -->
+    <!-- Brand icon -->
     <ImageView
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_marginBottom="8dp"
-        android:src="@drawable/ic_shield_lock"
+        android:src="@mipmap/ic_launcher"
         android:contentDescription="@null" />
 
     <!-- Brand name -->
@@ -23,7 +23,7 @@
         android:textSize="24sp"
         android:textStyle="bold"
         android:letterSpacing="0.2"
-        android:textColor="#00D4AA"
+        android:textColor="#00B4FF"
         android:fontFamily="sans-serif-medium" />
 
     <!-- Tagline -->

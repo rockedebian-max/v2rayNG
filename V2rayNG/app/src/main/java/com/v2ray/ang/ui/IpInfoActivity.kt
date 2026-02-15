@@ -52,10 +52,13 @@ class IpInfoActivity : BaseActivity() {
                     binding.tvStatus.visibility = View.GONE
                     binding.cardIp.visibility = View.VISIBLE
 
-                    // Load map
+                    // Load map with loading indicator
                     val lat = ipInfo.resolvedLat()
                     val lon = ipInfo.resolvedLon()
                     if (lat != null && lon != null) {
+                        binding.cardMap.visibility = View.VISIBLE
+                        binding.tvMapLoading.visibility = View.VISIBLE
+                        binding.ivMap.visibility = View.GONE
                         loadMap(lat, lon)
                     }
                 }
@@ -73,20 +76,36 @@ class IpInfoActivity : BaseActivity() {
             try {
                 val url = "https://staticmap.openstreetmap.de/staticmap.php?center=$lat,$lon&zoom=4&size=600x300&markers=$lat,$lon,red-pushpin"
                 val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
-                connection.connectTimeout = 8000
-                connection.readTimeout = 8000
+                connection.setRequestProperty("User-Agent", "CyberGuard/1.0")
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+                connection.instanceFollowRedirects = true
                 connection.connect()
-                val bitmap = BitmapFactory.decodeStream(connection.inputStream)
-                connection.disconnect()
 
-                withContext(Dispatchers.Main) {
-                    if (bitmap != null) {
-                        binding.ivMap.setImageBitmap(bitmap)
-                        binding.cardMap.visibility = View.VISIBLE
+                if (connection.responseCode == 200) {
+                    val bitmap = BitmapFactory.decodeStream(connection.inputStream)
+                    connection.disconnect()
+
+                    withContext(Dispatchers.Main) {
+                        if (bitmap != null) {
+                            binding.ivMap.setImageBitmap(bitmap)
+                            binding.ivMap.visibility = View.VISIBLE
+                            binding.tvMapLoading.visibility = View.GONE
+                        } else {
+                            binding.tvMapLoading.text = getString(R.string.ip_info_map_unavailable)
+                        }
+                    }
+                } else {
+                    connection.disconnect()
+                    withContext(Dispatchers.Main) {
+                        binding.tvMapLoading.text = getString(R.string.ip_info_map_unavailable)
                     }
                 }
             } catch (e: Exception) {
                 Log.e(AppConfig.TAG, "Failed to load static map", e)
+                withContext(Dispatchers.Main) {
+                    binding.tvMapLoading.text = getString(R.string.ip_info_map_unavailable)
+                }
             }
         }
     }

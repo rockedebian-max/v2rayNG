@@ -10,6 +10,7 @@
 
         <CheckBoxPreference
             android:key="pref_confirm_remove"
+            android:defaultValue="true"
             android:summary="@string/summary_pref_confirm_remove"
             android:title="@string/title_pref_confirm_remove" />
 

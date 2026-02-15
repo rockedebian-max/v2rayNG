@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">v2rayNG</string>
-    <string name="app_widget_name">Switch</string>
-    <string name="app_tile_name">Switch</string>
-    <string name="app_tile_first_use">First use of this feature, please use the app to add server</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="migration_success">Data migration success!</string>
-    <string name="action_stop_service">Stop service</string>
-    <string name="migration_fail">Data migration failed!</string>
-    <string name="pull_down_to_refresh">Please pull down to refresh!</string>
+    <string name="app_name" translatable="false">CYBERGUARD</string>
+    <string name="app_widget_name">CYBERGUARD</string>
+    <string name="app_tile_name">CYBERGUARD</string>
+    <string name="app_tile_first_use">Primero agrega un servidor en la app</string>
+    <string name="navigation_drawer_open">Abrir menú</string>
+    <string name="navigation_drawer_close">Cerrar menú</string>
+    <string name="migration_success">Migración de datos exitosa</string>
+    <string name="action_stop_service">Detener servicio</string>
+    <string name="migration_fail">Error en migración de datos</string>
+    <string name="pull_down_to_refresh">Desliza hacia abajo para actualizar</string>
 
     <!-- Notifications -->
-    <string name="notification_action_stop_v2ray">Stop</string>
-    <string name="toast_permission_denied">Unable to obtain the permission</string>
-    <string name="toast_permission_denied_notification">Unable to obtain the notification permission</string>
-    <string name="notification_action_more">Click for more</string>
-    <string name="toast_services_start">Start Services</string>
-    <string name="toast_services_stop">Stop Services</string>
-    <string name="toast_services_success">Start Services Success</string>
-    <string name="toast_services_failure">Start Services Failure</string>
+    <string name="notification_action_stop_v2ray">Detener</string>
+    <string name="toast_permission_denied">No se pudo obtener el permiso</string>
+    <string name="toast_permission_denied_notification">No se pudo obtener el permiso de notificaciones</string>
+    <string name="notification_action_more">Toca para más opciones</string>
+    <string name="toast_services_start">Iniciando servicio…</string>
+    <string name="toast_services_stop">Servicio detenido</string>
+    <string name="toast_services_success">VPN conectado correctamente</string>
+    <string name="toast_services_failure">No se pudo conectar al servidor</string>
 
     <!--ServerActivity-->
     <string name="title_server">Config</string>
-    <string name="menu_item_add_config">Add config</string>
-    <string name="menu_item_save_config">Save config</string>
-    <string name="menu_item_edit_config">Edit config</string>
-    <string name="menu_item_del_config">Delete config</string>
-    <string name="menu_item_import_config_qrcode">Import from QRcode</string>
-    <string name="menu_item_import_config_clipboard">Import from Clipboard</string>
-    <string name="menu_item_import_config_local">Import from locally</string>
+    <string name="menu_item_add_config">Agregar servidor</string>
+    <string name="menu_item_save_config">Guardar</string>
+    <string name="menu_item_edit_config">Editar servidor</string>
+    <string name="menu_item_del_config">Eliminar servidor</string>
+    <string name="menu_item_import_config_qrcode">Importar desde QR</string>
+    <string name="menu_item_import_config_clipboard">Importar desde portapapeles</string>
+    <string name="menu_item_import_config_local">Importar desde archivo</string>
     <string name="menu_item_import_config_policy_group">Add [Policy group]</string>
     <string name="menu_item_import_config_manually_vmess">Add [VMess]</string>
     <string name="menu_item_import_config_manually_vless">Add [VLESS]</string>
@@ -39,7 +39,7 @@
     <string name="menu_item_import_config_manually_trojan">Add [Trojan]</string>
     <string name="menu_item_import_config_manually_wireguard">Add [Wireguard]</string>
     <string name="menu_item_import_config_manually_hysteria2">Add [Hysteria2]</string>
-    <string name="del_config_comfirm">Confirm delete ?</string>
+    <string name="del_config_comfirm">¿Eliminar este servidor?</string>
     <string name="server_lab_remarks">remarks</string>
     <string name="server_lab_address">address</string>
     <string name="server_lab_port">port</string>
@@ -88,23 +88,23 @@
     <string name="server_lab_reserved">Reserved(Optional, separated by commas)</string>
     <string name="server_lab_local_address">Local address (optional IPv4/IPv6, separated by commas)</string>
     <string name="server_lab_local_mtu">Mtu(optional, default 1420)</string>
-    <string name="toast_success">Success</string>
-    <string name="toast_failure">Failure</string>
-    <string name="toast_none_data">There is nothing</string>
-    <string name="toast_incorrect_protocol">Incorrect protocol</string>
-    <string name="toast_decoding_failed">Decoding failed</string>
-    <string name="title_file_chooser">Select a config</string>
-    <string name="toast_require_file_manager">Please install a File Manager.</string>
+    <string name="toast_success">Éxito</string>
+    <string name="toast_failure">Error</string>
+    <string name="toast_none_data">No hay datos</string>
+    <string name="toast_incorrect_protocol">Protocolo incorrecto</string>
+    <string name="toast_decoding_failed">Error al decodificar</string>
+    <string name="title_file_chooser">Selecciona un servidor</string>
+    <string name="toast_require_file_manager">Instala un gestor de archivos</string>
     <string name="server_customize_config">Customize config</string>
-    <string name="toast_config_file_invalid">Invalid config</string>
+    <string name="toast_config_file_invalid">Configuración inválida</string>
     <string name="server_lab_content">Content</string>
-    <string name="toast_none_data_clipboard">There is no data in the clipboard</string>
-    <string name="toast_invalid_url">Invalid URL</string>
-    <string name="toast_insecure_url_protocol">Please do not use the insecure HTTP protocol subscription address</string>
+    <string name="toast_none_data_clipboard">No hay datos en el portapapeles</string>
+    <string name="toast_invalid_url">URL inválida</string>
+    <string name="toast_insecure_url_protocol">No uses direcciones de suscripción HTTP inseguras</string>
     <string name="server_lab_need_inbound">Ensure inbounds port is consistent with the settings</string>
-    <string name="toast_malformed_josn">Config malformed</string>
+    <string name="toast_malformed_josn">Configuración con formato incorrecto</string>
     <string name="server_lab_request_host6">Host(SNI)(Optional)</string>
-    <string name="toast_action_not_allowed">Action not allowed</string>
+    <string name="toast_action_not_allowed">Acción no permitida</string>
     <string name="server_obfs_password">Obfs password</string>
     <string name="server_lab_port_hop">Port Hopping(will override the port)</string>
     <string name="server_lab_port_hop_interval">Port Hopping Interval</string>
@@ -130,37 +130,37 @@
     <string name="asset_geo_files_sources">Geo files source (optional)</string>
 
     <!-- PerAppProxyActivity -->
-    <string name="msg_dialog_progress">Loading</string>
-    <string name="menu_item_search">Search</string>
-    <string name="menu_item_select_all">Select all</string>
-    <string name="menu_item_invert_selection">Invert selection</string>
-    <string name="msg_enter_keywords">Enter keywords</string>
-    <string name="switch_bypass_apps_mode">Bypass Mode</string>
-    <string name="menu_item_select_proxy_app">Auto select proxy app</string>
-    <string name="msg_downloading_content">Downloading content</string>
-    <string name="menu_item_export_proxy_app">Export to Clipboard</string>
-    <string name="menu_item_import_proxy_app">Import from Clipboard</string>
-    <string name="per_app_proxy_settings">Per-app settings</string>
-    <string name="per_app_proxy_settings_enable">Enable per-app</string>
+    <string name="msg_dialog_progress">Cargando</string>
+    <string name="menu_item_search">Buscar</string>
+    <string name="menu_item_select_all">Seleccionar todo</string>
+    <string name="menu_item_invert_selection">Invertir selección</string>
+    <string name="msg_enter_keywords">Ingresa palabras clave</string>
+    <string name="switch_bypass_apps_mode">Modo bypass</string>
+    <string name="menu_item_select_proxy_app">Selección automática</string>
+    <string name="msg_downloading_content">Descargando contenido</string>
+    <string name="menu_item_export_proxy_app">Exportar al portapapeles</string>
+    <string name="menu_item_import_proxy_app">Importar del portapapeles</string>
+    <string name="per_app_proxy_settings">Proxy por aplicación</string>
+    <string name="per_app_proxy_settings_enable">Activar proxy por app</string>
 
     <!-- Preferences -->
-    <string name="title_settings">Settings</string>
-    <string name="title_advanced">Advanced Settings</string>
-    <string name="title_core_settings">Core Settings</string>
-    <string name="title_vpn_settings">VPN Settings</string>
+    <string name="title_settings">Configuración</string>
+    <string name="title_advanced">Ajustes avanzados</string>
+    <string name="title_core_settings">Ajustes de núcleo</string>
+    <string name="title_vpn_settings">Ajustes de VPN</string>
     <string name="title_pref_per_app_proxy">Per-app proxy</string>
     <string name="summary_pref_per_app_proxy">General: Checked apps use proxy, unchecked apps connect directly; \nBypass mode: checked apps connect directly, unchecked apps use proxy. \nThe option to automatically select proxy applications is in the menu</string>
-    <string name="title_pref_is_booted">Auto connect at startup</string>
-    <string name="summary_pref_is_booted">Automatically connects to the selected server at startup, which may be unsuccessful</string>
+    <string name="title_pref_is_booted">Conectar automáticamente al iniciar</string>
+    <string name="summary_pref_is_booted">Conecta al servidor seleccionado al abrir la app</string>
 
-    <string name="title_pref_auto_remove_invalid_after_test">Auto delete invalid config after testing</string>
-    <string name="summary_pref_auto_remove_invalid_after_test">Test results may not be accurate; deleted config cannot be recovered.</string>
+    <string name="title_pref_auto_remove_invalid_after_test">Eliminar servidores inválidos tras prueba</string>
+    <string name="summary_pref_auto_remove_invalid_after_test">Los servidores eliminados no se pueden recuperar</string>
     <string name="title_pref_auto_sort_after_test">Auto sort after testing</string>
     <string name="summary_pref_auto_sort_after_test">Test results may not be accurate;</string>
 
-    <string name="title_mux_settings">Mux Settings</string>
-    <string name="title_pref_mux_enabled">Enable Mux</string>
-    <string name="summary_pref_mux_enabled">Faster, but it may cause unstable connectivity\nCustomize how to handle TCP, UDP and QUIC below</string>
+    <string name="title_mux_settings">Ajustes de Mux</string>
+    <string name="title_pref_mux_enabled">Activar Mux</string>
+    <string name="summary_pref_mux_enabled">Más rápido, pero puede causar inestabilidad\nPersonaliza TCP, UDP y QUIC abajo</string>
     <string name="title_pref_mux_concurency">TCP connections（range -1 to 1024）</string>
     <string name="title_pref_mux_xudp_concurency">XUDP connections（range -1 to 1024）</string>
     <string name="title_pref_mux_xudp_quic">Handling of QUIC in mux tunnel</string>
@@ -170,17 +170,16 @@
         <item>skip</item>
     </string-array>
 
-    <string name="title_pref_speed_enabled">Enable speed display</string>
-    <string name="summary_pref_speed_enabled">Display current speed in the notification.\nNotification icon would change based on
-        usage.</string>
+    <string name="title_pref_speed_enabled">Mostrar velocidad</string>
+    <string name="summary_pref_speed_enabled">Muestra la velocidad actual en la notificación</string>
 
     <string name="title_pref_sniffing_enabled">Enable Sniffing</string>
     <string name="summary_pref_sniffing_enabled">Try sniff domain from the packet (default on)</string>
     <string name="title_pref_route_only_enabled">Enable routeOnly</string>
     <string name="summary_pref_route_only_enabled">Use the sniffed domain name for routing only, and keep the target address as the IP address.</string>
 
-    <string name="title_pref_local_dns_enabled">Enable local DNS</string>
-    <string name="summary_pref_local_dns_enabled">DNS processed by core‘s DNS module (Recommended if you need routing bypassing LAN and mainland addresses)</string>
+    <string name="title_pref_local_dns_enabled">DNS local</string>
+    <string name="summary_pref_local_dns_enabled">Procesar DNS a través del módulo del núcleo</string>
 
     <string name="title_pref_fake_dns_enabled">Enable fake DNS</string>
     <string name="summary_pref_fake_dns_enabled">Local DNS returns fake IP addresses (faster, but it may not work for some apps)</string>
@@ -191,8 +190,8 @@
     <string name="title_pref_remote_dns">Remote DNS (udp/tcp/https/quic)(Optional)</string>
     <string name="summary_pref_remote_dns">DNS</string>
 
-    <string name="title_pref_vpn_dns">VPN DNS (only IPv4/v6)</string>
-    <string name="title_pref_vpn_bypass_lan">Does VPN bypass LAN</string>
+    <string name="title_pref_vpn_dns">DNS del VPN (solo IPv4/v6)</string>
+    <string name="title_pref_vpn_bypass_lan">Excluir red local (LAN)</string>
 
     <string name="title_pref_vpn_interface_address">VPN Interface Address</string>
 
@@ -215,8 +214,8 @@
     <string name="summary_pref_proxy_sharing_enabled">Other devices can connect to proxy by your IP address through local proxy. Only enable in trusted networks to avoid unauthorized connections</string>
     <string name="toast_warning_pref_proxysharing_short">Allow connections from the LAN. Make sure you are in a trusted network</string>
 
-    <string name="title_pref_allow_insecure">allowInsecure</string>
-    <string name="summary_pref_allow_insecure">When TLS is selected, allow insecure connections by default</string>
+    <string name="title_pref_allow_insecure">Permitir conexiones inseguras</string>
+    <string name="summary_pref_allow_insecure">Cuando TLS está seleccionado, permite conexiones inseguras por defecto</string>
 
     <string name="title_pref_socks_port">Local proxy port</string>
     <string name="summary_pref_socks_port">Local proxy port</string>
@@ -224,8 +223,8 @@
     <string name="title_pref_local_dns_port">Local DNS port</string>
     <string name="summary_pref_local_dns_port">Local DNS port</string>
 
-    <string name="title_pref_confirm_remove">Delete config confirmation</string>
-    <string name="summary_pref_confirm_remove">Whether deleting a config requires a second confirmation by the user</string>
+    <string name="title_pref_confirm_remove">Confirmar al eliminar</string>
+    <string name="summary_pref_confirm_remove">Pedir confirmación antes de eliminar un servidor</string>
 
     <string name="title_pref_start_scan_immediate">Start scanning immediately</string>
     <string name="summary_pref_start_scan_immediate">Open the camera to scan immediately at startup, otherwise you can choose to scan the code or select a photo in the toolbar</string>
@@ -240,24 +239,24 @@
     <string name="title_pref_feedback">Feedback</string>
     <string name="toast_tg_app_not_found">Telegram app not found</string>
     <string name="title_privacy_policy">Privacy policy</string>
-    <string name="title_qr_code">QR code</string>
+    <string name="title_qr_code">Código QR</string>
     <string name="title_about">About</string>
     <string name="title_source_code">Source code</string>
     <string name="title_oss_license">Open Source licenses</string>
     <string name="title_tg_channel">Telegram channel</string>
 
 
-    <string name="title_pref_auto_update_subscription">Automatic update subscriptions</string>
-    <string name="summary_pref_auto_update_subscription">Update your subscriptions automatically at set intervals in the background. Depending on the device, this feature may not always work</string>
-    <string name="title_pref_auto_update_interval">Auto Update Interval (Minutes, Min value 15)</string>
+    <string name="title_pref_auto_update_subscription">Actualización automática de suscripciones</string>
+    <string name="summary_pref_auto_update_subscription">Actualiza suscripciones automáticamente en segundo plano</string>
+    <string name="title_pref_auto_update_interval">Intervalo de actualización (minutos, mínimo 15)</string>
 
     <string name="title_core_loglevel">Log Level</string>
     <string name="title_outbound_domain_resolve_method">Outbound domain pre-resolve method</string>
-    <string name="title_mode">Mode</string>
-    <string name="title_mode_help">Click me for more help</string>
-    <string name="title_language">Language</string>
-    <string name="title_ui_settings">UI settings</string>
-    <string name="title_pref_ui_mode_night">UI mode settings</string>
+    <string name="title_mode">Modo</string>
+    <string name="title_mode_help">Toca para más ayuda</string>
+    <string name="title_language">Idioma</string>
+    <string name="title_ui_settings">Interfaz</string>
+    <string name="title_pref_ui_mode_night">Tema de la app</string>
     <string name="title_pref_use_hev_tunnel">Enable Hev TUN Feature</string>
     <string name="summary_pref_use_hev_tunnel">When enabled, TUN will use hev-socks5-tunnel; otherwise, it will use xray-core.</string>
     <string name="title_pref_hev_tunnel_loglevel">Hev Tun Log Level</string>
@@ -266,32 +265,32 @@
     <string name="title_logcat">Logcat</string>
     <string name="logcat_copy">Copy</string>
     <string name="logcat_clear">Clear</string>
-    <string name="title_service_restart">Service restart</string>
-    <string name="title_sub_setting">Subscription group setting</string>
-    <string name="sub_setting_remarks">remarks</string>
-    <string name="sub_setting_url">Optional URL</string>
+    <string name="title_service_restart">Reiniciar servicio</string>
+    <string name="title_sub_setting">Configurar suscripción</string>
+    <string name="sub_setting_remarks">Nombre</string>
+    <string name="sub_setting_url">URL (opcional)</string>
     <string name="sub_setting_user_agent">User Agent</string>
-    <string name="sub_setting_filter">Remarks regular filter</string>
-    <string name="sub_setting_enable">Enable update</string>
-    <string name="sub_auto_update">Enable automatic update</string>
-    <string name="sub_allow_insecure_url">Allow insecure HTTP address</string>
+    <string name="sub_setting_filter">Filtro de servidores</string>
+    <string name="sub_setting_enable">Activar actualización</string>
+    <string name="sub_auto_update">Actualización automática</string>
+    <string name="sub_allow_insecure_url">Permitir dirección HTTP insegura</string>
     <string name="sub_setting_pre_profile">Previous proxy config remarks</string>
     <string name="sub_setting_next_profile">Next proxy config remarks</string>
     <string name="sub_setting_pre_profile_tip">The config remarks exist and are unique</string>
-    <string name="title_sub_update">Update subscription</string>
-    <string name="title_ping_all_server">Tcping config</string>
-    <string name="title_real_ping_all_server">Real delay config</string>
+    <string name="title_sub_update">Actualizar suscripción</string>
+    <string name="title_ping_all_server">Ping rápido</string>
+    <string name="title_real_ping_all_server">Latencia real</string>
     <string name="title_user_asset_setting">Asset files</string>
-    <string name="title_sort_by_test_results">Sorting by test results</string>
-    <string name="title_filter_config">Filter config</string>
-    <string name="filter_config_all">All</string>
-    <string name="title_del_duplicate_config_count">Delete %d duplicate configs</string>
-    <string name="title_del_config_count">Delete %d configs</string>
-    <string name="title_import_config_count">Import %d configs</string>
-    <string name="title_update_config_count">Update %d configs</string>
+    <string name="title_sort_by_test_results">Ordenando por resultado</string>
+    <string name="title_filter_config">Filtrar servidores</string>
+    <string name="filter_config_all">Todos</string>
+    <string name="title_del_duplicate_config_count">Eliminar %d servidores duplicados</string>
+    <string name="title_del_config_count">Eliminar %d servidores</string>
+    <string name="title_import_config_count">%d servidores importados</string>
+    <string name="title_update_config_count">%d servidores actualizados</string>
 
-    <string name="tasker_start_service">Start Service</string>
-    <string name="tasker_setting_confirm">Confirm</string>
+    <string name="tasker_start_service">Iniciar servicio</string>
+    <string name="tasker_setting_confirm">Confirmar</string>
 
     <!-- RoutingSettingActivity -->
     <string name="routing_settings_domain_strategy">Domain strategy</string>
@@ -316,14 +315,17 @@
     <string name="routing_settings_network_tip" translatable="false">[udp|tcp]</string>
     <string name="routing_settings_outbound_tag" translatable="false">outboundTag</string>
 
-    <string name="connection_test_pending">Check Connectivity</string>
-    <string name="connection_test_testing">Testing…</string>
-    <string name="connection_test_testing_count">Testing %d configs…</string>
+    <string name="connection_test_pending">Verificar conexión</string>
+    <string name="connection_test_testing">Probando…</string>
+    <string name="connection_test_testing_count">Probando %d servidores…</string>
     <string name="btn_test_all_servers">Probar Servidores</string>
     <string name="btn_testing_servers">Probando…</string>
     <string name="servers_header">Servidores</string>
-    <string name="toolbar_brand_name" translatable="false">SECRETO VPN</string>
-    <string name="nav_header_tagline" translatable="false">Conexión Privada</string>
+    <string name="toolbar_brand_name" translatable="false">CYBERGUARD</string>
+    <string name="nav_header_tagline" translatable="false">Protección Digital</string>
+    <string name="toolbar_subtitle_on">[ TÚNEL ACTIVO ]</string>
+    <string name="toolbar_subtitle_off">[ DESCONECTADO ]</string>
+    <string name="toolbar_subtitle_connecting">[ CONECTANDO… ]</string>
     <string name="btn_connect">Conectar</string>
     <string name="btn_disconnect">Detener</string>
     <string name="btn_connecting">Conectando…</string>
@@ -339,21 +341,23 @@
     <string name="ip_info_label_timezone">Zona horaria</string>
     <string name="ip_info_not_connected">Conecta el VPN primero para ver tu IP</string>
     <string name="ip_info_error">No se pudo obtener la información de IP</string>
-    <string name="connection_test_available">Success: Connection took %dms</string>
-    <string name="connection_test_error">Fail to detect internet connection: %s</string>
-    <string name="connection_test_fail">Internet Unavailable</string>
-    <string name="connection_test_error_status_code">Error code: #%d</string>
-    <string name="connection_connected">Connected, tap to check connection</string>
-    <string name="connection_not_connected">Not connected</string>
-    <string name="connection_runing_task_left">Number of running test tasks: %s</string>
+    <string name="ip_info_map_loading">Cargando mapa…</string>
+    <string name="ip_info_map_unavailable">Mapa no disponible</string>
+    <string name="connection_test_available">Conexión exitosa: %dms</string>
+    <string name="connection_test_error">Error de conexión: %s</string>
+    <string name="connection_test_fail">Internet no disponible</string>
+    <string name="connection_test_error_status_code">Código de error: #%d</string>
+    <string name="connection_connected">Conectado — toca para verificar</string>
+    <string name="connection_not_connected">Sin conexión</string>
+    <string name="connection_runing_task_left">Pruebas restantes: %s</string>
 
-    <string name="import_subscription_success">Subscription imported Successfully</string>
-    <string name="import_subscription_failure">Import subscription failed</string>
-    <string name="title_fragment_settings">Fragment Settings</string>
-    <string name="title_pref_fragment_packets">Fragment Packets</string>
-    <string name="title_pref_fragment_length">Fragment Length (min-max)</string>
-    <string name="title_pref_fragment_interval">Fragment Interval (min-max)</string>
-    <string name="title_pref_fragment_enabled">Enable Fragment</string>
+    <string name="import_subscription_success">Suscripción importada correctamente</string>
+    <string name="import_subscription_failure">Error al importar suscripción</string>
+    <string name="title_fragment_settings">Ajustes de Fragment</string>
+    <string name="title_pref_fragment_packets">Paquetes Fragment</string>
+    <string name="title_pref_fragment_length">Longitud (min-max)</string>
+    <string name="title_pref_fragment_interval">Intervalo (min-max)</string>
+    <string name="title_pref_fragment_enabled">Activar Fragment</string>
 
     <string name="update_check_for_update">Check for update</string>
     <string name="update_already_latest_version">Already on the latest version</string>
@@ -379,33 +383,33 @@
     <string name="title_webdav_remote_path">Remote directory (optional)</string>
 
     <string-array name="share_method">
-        <item>QRcode</item>
-        <item>Export to clipboard</item>
-        <item>Export full config to clipboard</item>
+        <item>Código QR</item>
+        <item>Copiar al portapapeles</item>
+        <item>Copiar config completa</item>
     </string-array>
 
     <string-array name="share_method_more">
-        <item>QRcode</item>
-        <item>Export to clipboard</item>
-        <item>Export full config to clipboard</item>
-        <item>Edit</item>
-        <item>Delete</item>
+        <item>Código QR</item>
+        <item>Copiar al portapapeles</item>
+        <item>Copiar config completa</item>
+        <item>Editar</item>
+        <item>Eliminar</item>
     </string-array>
 
     <string-array name="share_sub_method">
-        <item>QRcode</item>
-        <item>Export to clipboard</item>
+        <item>Código QR</item>
+        <item>Copiar al portapapeles</item>
     </string-array>
 
     <string-array name="mode_entries">
         <item>VPN</item>
-        <item>Proxy only</item>
+        <item>Solo proxy</item>
     </string-array>
 
     <string-array name="ui_mode_night">
-        <item>Follow system</item>
-        <item>Light</item>
-        <item>Dark</item>
+        <item>Seguir sistema</item>
+        <item>Claro</item>
+        <item>Oscuro</item>
     </string-array>
 
     <string-array name="preset_rulesets">
@@ -417,9 +421,9 @@
     </string-array>
 
     <string-array name="vpn_bypass_lan">
-        <item>Follow config</item>
-        <item>Bypass</item>
-        <item>Not Bypass</item>
+        <item>Según config</item>
+        <item>Excluir</item>
+        <item>No excluir</item>
     </string-array>
 
     <string-array name="outbound_domain_resolve_method">
@@ -438,6 +442,26 @@
     <string-array name="config_backup_options">
         <item>Local</item>
         <item>WebDAV</item>
+    </string-array>
+
+    <!-- Terminal hacker messages -->
+    <string-array name="terminal_connecting">
+        <item>$ cyberguard --init-tunnel</item>
+        <item>[+] Inicializando túnel seguro…</item>
+        <item>[+] Resolviendo servidor remoto…</item>
+        <item>[+] Handshake TLS/SSL completado</item>
+        <item>[+] Encriptando canal AES-256-GCM…</item>
+        <item>[+] Abriendo puerto seguro…</item>
+        <item>[+] Enrutando tráfico por VPN…</item>
+        <item>[✓] Conexión establecida — túnel activo</item>
+    </string-array>
+
+    <string-array name="terminal_disconnecting">
+        <item>$ cyberguard --disconnect</item>
+        <item>[+] Cerrando túnel encriptado…</item>
+        <item>[+] Limpiando rutas de red…</item>
+        <item>[+] Liberando puerto…</item>
+        <item>[✓] Desconectado — tráfico directo</item>
     </string-array>
 
 </resources>

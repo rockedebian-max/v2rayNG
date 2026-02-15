@@ -117,6 +117,8 @@
                 android:textColor="@color/colorPing"
                 android:textSize="13sp"
                 android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.02"
                 tools:text="125ms" />
 
             <!-- Hidden action buttons (kept for binding compatibility) -->

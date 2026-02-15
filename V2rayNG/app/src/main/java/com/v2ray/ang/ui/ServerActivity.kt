@@ -625,7 +625,7 @@ class ServerActivity : BaseActivity() {
     private fun deleteServer(): Boolean {
         if (editGuid.isNotEmpty()) {
             if (editGuid != MmkvManager.getSelectServer()) {
-                if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE)) {
+                if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {
                     AlertDialog.Builder(this).setMessage(R.string.del_config_comfirm)
                         .setPositiveButton(android.R.string.ok) { _, _ ->
                             MmkvManager.removeServer(editGuid)

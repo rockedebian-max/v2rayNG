@@ -112,7 +112,7 @@ class SubSettingActivity : BaseActivity() {
         }
 
         override fun onRemove(guid: String, position: Int) {
-            if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE)) {
+            if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {
                 AlertDialog.Builder(ownerActivity)
                     .setMessage(R.string.del_config_comfirm)
                     .setPositiveButton(android.R.string.ok) { _, _ ->

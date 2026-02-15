@@ -20,16 +20,33 @@
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize">
 
-                <TextView
-                    android:id="@+id/tv_toolbar_title"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/toolbar_brand_name"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.15"
-                    android:textColor="?attr/colorPrimary"
-                    android:fontFamily="sans-serif-medium" />
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_toolbar_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/toolbar_brand_name"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.18"
+                        android:textColor="?attr/colorPrimary"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <TextView
+                        android:id="@+id/tv_toolbar_subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/toolbar_subtitle_off"
+                        android:textSize="11sp"
+                        android:letterSpacing="0.05"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:fontFamily="monospace" />
+
+                </LinearLayout>
 
             </androidx.appcompat.widget.Toolbar>
 
@@ -71,9 +88,9 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingStart="@dimen/padding_spacing_dp16"
-                        android:paddingTop="@dimen/padding_spacing_dp4"
-                        android:paddingEnd="@dimen/padding_spacing_dp4"
-                        android:paddingBottom="@dimen/padding_spacing_dp4">
+                        android:paddingTop="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="8dp">
 
                         <TextView
                             android:id="@+id/tv_servers_header"
@@ -81,19 +98,25 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/servers_header"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                            android:textStyle="bold" />
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.08"
+                            android:textAllCaps="true"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_test_all"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="38dp"
                             android:text="@string/btn_test_all_servers"
                             android:textSize="12sp"
+                            android:letterSpacing="0.03"
                             app:icon="@drawable/ic_network_check_24dp"
                             app:iconSize="18dp"
-                            app:cornerRadius="18dp" />
+                            app:cornerRadius="19dp"
+                            app:strokeColor="?attr/colorPrimary"
+                            app:strokeWidth="1dp" />
 
                     </LinearLayout>
 
@@ -105,6 +128,77 @@
                         android:scrollbars="vertical"
                         android:layout_weight="1" />
 
+                    <!-- Terminal hacker style -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_terminal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginBottom="4dp"
+                        android:visibility="gone"
+                        app:cardBackgroundColor="#0A0E14"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="4dp"
+                        app:strokeColor="#1A3A5C"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <!-- Terminal header -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="6dp">
+
+                                <View
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:background="@drawable/terminal_dot"
+                                    android:backgroundTint="#FF5F56"
+                                    android:layout_marginEnd="4dp" />
+                                <View
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:background="@drawable/terminal_dot"
+                                    android:backgroundTint="#FFBD2E"
+                                    android:layout_marginEnd="4dp" />
+                                <View
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:background="@drawable/terminal_dot"
+                                    android:backgroundTint="#27C93F"
+                                    android:layout_marginEnd="8dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="cyberguard@vpn:~"
+                                    android:textColor="#5A6B7A"
+                                    android:textSize="10sp"
+                                    android:fontFamily="monospace" />
+                            </LinearLayout>
+
+                            <!-- Terminal output lines -->
+                            <TextView
+                                android:id="@+id/tv_terminal"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:lineSpacingExtra="3dp"
+                                android:textColor="#00B4FF"
+                                android:textSize="11sp" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
                     <LinearLayout
                         android:id="@+id/layout_test"
                         android:layout_width="match_parent"
@@ -113,12 +207,13 @@
                         android:focusable="true"
                         android:nextFocusLeft="@+id/view_pager"
                         android:nextFocusRight="@+id/fab"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:background="#0A0E14">
 
                         <View
                             android:layout_width="wrap_content"
                             android:layout_height="1dp"
-                            android:background="@color/divider_color_light" />
+                            android:background="#1A3A5C" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -135,9 +230,18 @@
                                 android:layout_marginEnd="12dp"
                                 android:indeterminate="true"
                                 android:visibility="gone"
-                                app:indicatorColor="?attr/colorPrimary"
+                                app:indicatorColor="#00B4FF"
                                 app:indicatorSize="20dp"
                                 app:trackThickness="2dp" />
+
+                            <TextView
+                                android:id="@+id/tv_status_prefix"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="&gt; "
+                                android:textColor="#00B4FF"
+                                android:textSize="13sp"
+                                android:fontFamily="monospace" />
 
                             <TextView
                                 android:id="@+id/tv_test_state"
@@ -148,7 +252,9 @@
                                 android:maxLines="2"
                                 android:minLines="1"
                                 android:text="@string/connection_test_pending"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+                                android:fontFamily="monospace"
+                                android:textColor="#00B4FF"
+                                android:textSize="13sp" />
 
                         </LinearLayout>
 
@@ -168,8 +274,11 @@
                     android:nextFocusLeft="@+id/layout_test"
                     android:text="@string/btn_connect"
                     android:textColor="@color/colorWhite"
+                    android:textSize="14sp"
+                    android:letterSpacing="0.06"
                     app:icon="@drawable/ic_play_24dp"
                     app:iconTint="@color/colorWhite"
+                    app:cornerRadius="28dp"
                     app:layout_anchorGravity="bottom|right|end" />
             </androidx.coordinatorlayout.widget.CoordinatorLayout>
         </RelativeLayout>

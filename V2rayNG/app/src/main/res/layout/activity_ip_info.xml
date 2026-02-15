@@ -174,12 +174,29 @@
             app:strokeColor="@color/colorCardBorder"
             app:strokeWidth="1dp">
 
-            <ImageView
-                android:id="@+id/iv_map"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:contentDescription="@string/ip_info_map"
-                android:scaleType="centerCrop" />
+                android:layout_height="200dp">
+
+                <ImageView
+                    android:id="@+id/iv_map"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/ip_info_map"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_map_loading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/ip_info_map_loading"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+            </FrameLayout>
 
         </com.google.android.material.card.MaterialCardView>
 

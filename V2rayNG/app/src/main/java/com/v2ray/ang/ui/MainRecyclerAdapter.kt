@@ -1,6 +1,7 @@
 package com.v2ray.ang.ui
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -59,12 +60,17 @@ class MainRecyclerAdapter(
             holder.itemMainBinding.tvStatistics.text = getAddress(profile)
             holder.itemMainBinding.tvType.text = profile.configType.name
 
-            //TestResult - Phase 4: Enhanced visual indicators
+            //TestResult - color-coded ping
             val aff = MmkvManager.decodeServerAffiliationInfo(guid)
             val delayMs = aff?.testDelayMillis ?: 0L
             if (delayMs > 0L) {
                 holder.itemMainBinding.tvTestResult.text = "${delayMs}ms"
-                holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPing))
+                val pingColor = when {
+                    delayMs < 200 -> R.color.colorPingGreen
+                    delayMs < 500 -> R.color.colorPingYellow
+                    else -> R.color.colorPingRed
+                }
+                holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, pingColor))
             } else if (delayMs < 0L) {
                 holder.itemMainBinding.tvTestResult.text = "Error"
                 holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPingRed))
@@ -76,13 +82,22 @@ class MainRecyclerAdapter(
             val isSelected = guid == MmkvManager.getSelectServer()
             val cardView = holder.itemView as? MaterialCardView
             if (isSelected) {
-                holder.itemMainBinding.layoutIndicator.setBackgroundResource(R.color.colorIndicator)
+                holder.itemMainBinding.layoutIndicator.setBackgroundResource(R.drawable.indicator_active)
                 cardView?.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorSelectedCard))
                 cardView?.strokeColor = ContextCompat.getColor(context, R.color.colorSelectedBorder)
+                cardView?.strokeWidth = 2.dpToPx(context)
+                holder.itemMainBinding.tvName.setTypeface(null, android.graphics.Typeface.BOLD)
+                holder.itemMainBinding.tvName.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    R.drawable.ic_shield_small, 0, 0, 0
+                )
+                holder.itemMainBinding.tvName.compoundDrawablePadding = 6.dpToPx(context)
             } else {
                 holder.itemMainBinding.layoutIndicator.setBackgroundResource(0)
                 cardView?.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorCardBackground))
                 cardView?.strokeColor = ContextCompat.getColor(context, R.color.colorCardBorder)
+                cardView?.strokeWidth = 1.dpToPx(context)
+                holder.itemMainBinding.tvName.setTypeface(null, android.graphics.Typeface.NORMAL)
+                holder.itemMainBinding.tvName.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
             }
 
             //subscription remarks
@@ -198,5 +213,9 @@ class MainRecyclerAdapter(
     }
 
     override fun onItemDismiss(position: Int) {
+    }
+
+    private fun Int.dpToPx(context: Context): Int {
+        return (this * context.resources.displayMetrics.density).toInt()
     }
 }
