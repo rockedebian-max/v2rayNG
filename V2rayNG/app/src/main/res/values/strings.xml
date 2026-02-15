@@ -40,7 +40,6 @@
     <string name="menu_item_import_config_manually_wireguard">Add [Wireguard]</string>
     <string name="menu_item_import_config_manually_hysteria2">Add [Hysteria2]</string>
     <string name="del_config_comfirm">Confirm delete ?</string>
-    <string name="del_invalid_config_comfirm">Please test before deleting! Confirm delete ?</string>
     <string name="server_lab_remarks">remarks</string>
     <string name="server_lab_address">address</string>
     <string name="server_lab_port">port</string>
@@ -239,8 +238,6 @@
 
     <!-- AboutActivity -->
     <string name="title_pref_feedback">Feedback</string>
-    <string name="summary_pref_feedback">Feedback enhancements or bugs to GitHub</string>
-    <string name="summary_pref_tg_group">Join Telegram Group</string>
     <string name="toast_tg_app_not_found">Telegram app not found</string>
     <string name="title_privacy_policy">Privacy policy</string>
     <string name="title_qr_code">QR code</string>
@@ -249,7 +246,6 @@
     <string name="title_oss_license">Open Source licenses</string>
     <string name="title_tg_channel">Telegram channel</string>
 
-    <string name="title_pref_promotion">Promotion</string>
 
     <string name="title_pref_auto_update_subscription">Automatic update subscriptions</string>
     <string name="summary_pref_auto_update_subscription">Update your subscriptions automatically at set intervals in the background. Depending on the device, this feature may not always work</string>
@@ -271,10 +267,6 @@
     <string name="logcat_copy">Copy</string>
     <string name="logcat_clear">Clear</string>
     <string name="title_service_restart">Service restart</string>
-    <string name="title_del_all_config">Delete config</string>
-    <string name="title_del_duplicate_config">Delete duplicate config</string>
-    <string name="title_del_invalid_config">Delete invalid config</string>
-    <string name="title_export_all">Export configs to clipboard</string>
     <string name="title_sub_setting">Subscription group setting</string>
     <string name="sub_setting_remarks">remarks</string>
     <string name="sub_setting_url">Optional URL</string>
@@ -296,7 +288,6 @@
     <string name="title_del_duplicate_config_count">Delete %d duplicate configs</string>
     <string name="title_del_config_count">Delete %d configs</string>
     <string name="title_import_config_count">Import %d configs</string>
-    <string name="title_export_config_count">Export %d configs</string>
     <string name="title_update_config_count">Update %d configs</string>
 
     <string name="tasker_start_service">Start Service</string>
@@ -331,8 +322,23 @@
     <string name="btn_test_all_servers">Probar Servidores</string>
     <string name="btn_testing_servers">Probando…</string>
     <string name="servers_header">Servidores</string>
+    <string name="toolbar_brand_name" translatable="false">SECRETO VPN</string>
+    <string name="nav_header_tagline" translatable="false">Conexión Privada</string>
     <string name="btn_connect">Conectar</string>
     <string name="btn_disconnect">Detener</string>
+    <string name="btn_connecting">Conectando…</string>
+    <string name="btn_disconnecting">Desconectando…</string>
+    <string name="connection_establishing">Estableciendo conexión segura…</string>
+    <string name="connection_disconnecting">Cerrando túnel seguro…</string>
+    <string name="ip_info_map">Mapa de ubicación IP</string>
+    <string name="ip_info_loading">Obteniendo información de IP…</string>
+    <string name="ip_info_title">Ubicación IP</string>
+    <string name="ip_info_label_ip">Dirección IP</string>
+    <string name="ip_info_label_location">Ubicación</string>
+    <string name="ip_info_label_isp">Proveedor</string>
+    <string name="ip_info_label_timezone">Zona horaria</string>
+    <string name="ip_info_not_connected">Conecta el VPN primero para ver tu IP</string>
+    <string name="ip_info_error">No se pudo obtener la información de IP</string>
     <string name="connection_test_available">Success: Connection took %dms</string>
     <string name="connection_test_error">Fail to detect internet connection: %s</string>
     <string name="connection_test_fail">Internet Unavailable</string>

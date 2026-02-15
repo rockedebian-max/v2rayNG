@@ -144,4 +144,13 @@ object SpeedtestManager {
 
         return "(${country ?: "unknown"}) ${ip ?: "unknown"}"
     }
+
+    fun getRemoteIPInfoFull(): IPAPIInfo? {
+        val url = MmkvManager.decodeSettingsString(AppConfig.PREF_IP_API_URL)
+            .takeIf { !it.isNullOrBlank() } ?: AppConfig.IP_API_URL
+
+        val httpPort = SettingsManager.getHttpPort()
+        val content = HttpUtil.getUrlContent(url, 5000, httpPort) ?: return null
+        return JsonUtil.fromJson(content, IPAPIInfo::class.java)
+    }
 }

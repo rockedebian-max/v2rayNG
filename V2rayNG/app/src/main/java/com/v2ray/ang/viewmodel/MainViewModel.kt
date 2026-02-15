@@ -256,6 +256,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         MessageUtil.sendMsg2Service(getApplication(), AppConfig.MSG_MEASURE_DELAY, "")
     }
 
+
     /**
      * Changes the subscription ID.
      * @param id The new subscription ID.

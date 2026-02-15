@@ -1,5 +1,8 @@
 package com.v2ray.ang.ui
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
@@ -9,12 +12,12 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
@@ -47,6 +50,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     val mainViewModel: MainViewModel by viewModels()
     private lateinit var groupPagerAdapter: GroupPagerAdapter
     private var tabMediator: TabLayoutMediator? = null
+    private var connectingAnimator: AnimatorSet? = null
 
     private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) {
@@ -66,7 +70,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        setupToolbar(binding.toolbar, false, getString(R.string.title_server))
+        setupToolbar(binding.toolbar, false, "")
 
         // setup viewpager and tablayout
         groupPagerAdapter = GroupPagerAdapter(this, emptyList())
@@ -113,7 +117,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             }
         }
         mainViewModel.isTesting.observe(this) { isTesting ->
-            binding.progressBar.visibility = if (isTesting) android.view.View.VISIBLE else android.view.View.INVISIBLE
+            binding.progressBar.visibility = if (isTesting) View.VISIBLE else View.INVISIBLE
             binding.btnTestAll.isEnabled = !isTesting
             binding.btnTestAll.text = getString(if (isTesting) R.string.btn_testing_servers else R.string.btn_test_all_servers)
         }
@@ -184,13 +188,8 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun scheduleAutoCheck() {
-        lifecycleScope.launch {
-            delay(3000)
-            if (mainViewModel.isRunning.value == true) {
-                setTestState(getString(R.string.connection_test_testing))
-                mainViewModel.testCurrentServerRealPing()
-            }
-        }
+        setTestState(getString(R.string.connection_test_testing))
+        mainViewModel.testCurrentServerRealPing()
     }
 
     private fun setTestState(content: String?) {
@@ -198,17 +197,44 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
+        // Always stop previous animation and reset FAB
+        stopConnectingAnimation()
+
         if (isLoading) {
-            binding.fab.setIconResource(R.drawable.ic_fab_check)
-            binding.fab.text = getString(R.string.btn_connect)
+            val wasRunning = mainViewModel.isRunning.value == true
+            binding.fab.isClickable = false
+
+            if (wasRunning) {
+                // Disconnecting state
+                binding.fab.setIconResource(R.drawable.ic_stop_24dp)
+                binding.fab.text = getString(R.string.btn_disconnecting)
+                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_connecting))
+                setTestState(getString(R.string.connection_disconnecting))
+            } else {
+                // Connecting state
+                binding.fab.setIconResource(R.drawable.ic_fab_check)
+                binding.fab.text = getString(R.string.btn_connecting)
+                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_connecting))
+                setTestState(getString(R.string.connection_establishing))
+            }
+
+            // Show visual indicators
+            binding.progressBar.visibility = View.VISIBLE
+            binding.progressConnecting.visibility = View.VISIBLE
+            startConnectingAnimation()
             return
         }
+
+        // Hide loading indicators
+        binding.fab.isClickable = true
+        binding.progressConnecting.visibility = View.GONE
 
         if (isRunning) {
             binding.fab.setIconResource(R.drawable.ic_stop_24dp)
             binding.fab.text = getString(R.string.btn_disconnect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_active))
             binding.fab.contentDescription = getString(R.string.btn_disconnect)
+            binding.progressBar.visibility = View.INVISIBLE
             setTestState(getString(R.string.connection_connected))
             binding.layoutTest.isFocusable = true
         } else {
@@ -216,9 +242,35 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             binding.fab.text = getString(R.string.btn_connect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_inactive))
             binding.fab.contentDescription = getString(R.string.btn_connect)
+            binding.progressBar.visibility = View.INVISIBLE
             setTestState(getString(R.string.connection_not_connected))
             binding.layoutTest.isFocusable = false
         }
+    }
+
+    private fun startConnectingAnimation() {
+        val pulseX = PropertyValuesHolder.ofFloat("scaleX", 1f, 1.06f, 1f)
+        val pulseY = PropertyValuesHolder.ofFloat("scaleY", 1f, 1.06f, 1f)
+        val pulseAlpha = PropertyValuesHolder.ofFloat("alpha", 1f, 0.75f, 1f)
+
+        val animator = ObjectAnimator.ofPropertyValuesHolder(binding.fab, pulseX, pulseY, pulseAlpha).apply {
+            duration = 1200
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+        }
+
+        connectingAnimator = AnimatorSet().apply {
+            play(animator)
+            start()
+        }
+    }
+
+    private fun stopConnectingAnimation() {
+        connectingAnimator?.cancel()
+        connectingAnimator = null
+        binding.fab.scaleX = 1f
+        binding.fab.scaleY = 1f
+        binding.fab.alpha = 1f
     }
 
     override fun onResume() {
@@ -231,24 +283,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
-
-        val searchItem = menu.findItem(R.id.search_view)
-        if (searchItem != null) {
-            val searchView = searchItem.actionView as SearchView
-            searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean = false
-
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    mainViewModel.filterConfig(newText.orEmpty())
-                    return false
-                }
-            })
-
-            searchView.setOnCloseListener {
-                mainViewModel.filterConfig("")
-                false
-            }
-        }
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -267,34 +301,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             importConfigLocal()
             true
         }
-
-        // Phase 2: Manual import and export removed
-
-        R.id.service_restart -> {
-            restartV2Ray()
-            true
-        }
-
-        R.id.del_all_config -> {
-            delAllConfig()
-            true
-        }
-
-        R.id.del_duplicate_config -> {
-            delDuplicateConfig()
-            true
-        }
-
-        R.id.del_invalid_config -> {
-            delInvalidConfig()
-            true
-        }
-
-        R.id.sub_update -> {
-            importConfigViaSub()
-            true
-        }
-
 
         else -> super.onOptionsItemSelected(item)
     }
@@ -370,85 +376,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
 
     /**
-     * import config from sub
-     */
-    private fun importConfigViaSub(): Boolean {
-        showLoading()
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val count = mainViewModel.updateConfigViaSubAll()
-            delay(500L)
-            launch(Dispatchers.Main) {
-                if (count > 0) {
-                    toast(getString(R.string.title_update_config_count, count))
-                    mainViewModel.reloadServerList()
-                } else {
-                    toastError(R.string.toast_failure)
-                }
-                hideLoading()
-            }
-        }
-        return true
-    }
-
-    private fun delAllConfig() {
-        AlertDialog.Builder(this).setMessage(R.string.del_config_comfirm)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                showLoading()
-                lifecycleScope.launch(Dispatchers.IO) {
-                    val ret = mainViewModel.removeAllServer()
-                    launch(Dispatchers.Main) {
-                        mainViewModel.reloadServerList()
-                        toast(getString(R.string.title_del_config_count, ret))
-                        hideLoading()
-                    }
-                }
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                //do noting
-            }
-            .show()
-    }
-
-    private fun delDuplicateConfig() {
-        AlertDialog.Builder(this).setMessage(R.string.del_config_comfirm)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                showLoading()
-                lifecycleScope.launch(Dispatchers.IO) {
-                    val ret = mainViewModel.removeDuplicateServer()
-                    launch(Dispatchers.Main) {
-                        mainViewModel.reloadServerList()
-                        toast(getString(R.string.title_del_duplicate_config_count, ret))
-                        hideLoading()
-                    }
-                }
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                //do noting
-            }
-            .show()
-    }
-
-    private fun delInvalidConfig() {
-        AlertDialog.Builder(this).setMessage(R.string.del_invalid_config_comfirm)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                showLoading()
-                lifecycleScope.launch(Dispatchers.IO) {
-                    val ret = mainViewModel.removeInvalidServer()
-                    launch(Dispatchers.Main) {
-                        mainViewModel.reloadServerList()
-                        toast(getString(R.string.title_del_config_count, ret))
-                        hideLoading()
-                    }
-                }
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                //do noting
-            }
-            .show()
-    }
-
-    /**
      * show file chooser
      */
     private fun showFileChooser() {
@@ -486,7 +413,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         // Handle navigation view item clicks here.
         when (item.itemId) {
-            R.id.sub_setting -> requestActivityLauncher.launch(Intent(this, SubSettingActivity::class.java))
+            R.id.ip_info -> startActivity(Intent(this, IpInfoActivity::class.java))
             R.id.per_app_proxy_settings -> requestActivityLauncher.launch(Intent(this, PerAppProxyActivity::class.java))
             R.id.settings -> requestActivityLauncher.launch(Intent(this, SettingsActivity::class.java))
         }
@@ -496,6 +423,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     override fun onDestroy() {
+        stopConnectingAnimation()
         tabMediator?.detach()
         super.onDestroy()
     }

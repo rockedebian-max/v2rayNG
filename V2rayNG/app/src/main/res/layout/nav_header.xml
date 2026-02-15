@@ -7,16 +7,35 @@
     android:orientation="vertical"
     android:padding="@dimen/padding_spacing_dp16">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:fontFamily="@font/montserrat_thin"
-        android:gravity="center"
-        android:paddingTop="@dimen/padding_spacing_dp8"
-        android:text="@string/app_name"
-        android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-        android:textColor="#E2E8F0" />
+    <!-- Brand icon glow effect -->
+    <ImageView
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginBottom="8dp"
+        android:src="@drawable/ic_shield_lock"
+        android:contentDescription="@null" />
 
+    <!-- Brand name -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/toolbar_brand_name"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.2"
+        android:textColor="#00D4AA"
+        android:fontFamily="sans-serif-medium" />
+
+    <!-- Tagline -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/nav_header_tagline"
+        android:textSize="12sp"
+        android:letterSpacing="0.3"
+        android:textColor="#5A6B7A"
+        android:fontFamily="sans-serif-light"
+        android:textAllCaps="true" />
 
 </LinearLayout>
