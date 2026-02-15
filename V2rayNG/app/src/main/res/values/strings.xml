@@ -328,6 +328,11 @@
     <string name="connection_test_pending">Check Connectivity</string>
     <string name="connection_test_testing">Testing…</string>
     <string name="connection_test_testing_count">Testing %d configs…</string>
+    <string name="btn_test_all_servers">Probar Servidores</string>
+    <string name="btn_testing_servers">Probando…</string>
+    <string name="servers_header">Servidores</string>
+    <string name="btn_connect">Conectar</string>
+    <string name="btn_disconnect">Detener</string>
     <string name="connection_test_available">Success: Connection took %dms</string>
     <string name="connection_test_error">Fail to detect internet connection: %s</string>
     <string name="connection_test_fail">Internet Unavailable</string>

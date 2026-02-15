@@ -42,7 +42,7 @@
                         android:layout_height="wrap_content"
                         android:indeterminate="true"
                         android:visibility="invisible"
-                        app:indicatorColor="@color/color_fab_active" />
+                        app:indicatorColor="?attr/colorPrimary" />
 
                     <com.google.android.material.tabs.TabLayout
                         android:id="@+id/tab_group"
@@ -51,6 +51,38 @@
                         app:tabIndicatorFullWidth="false"
                         app:tabMode="scrollable"
                         app:tabTextAppearance="@style/TabLayoutTextStyle" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="@dimen/padding_spacing_dp16"
+                        android:paddingTop="@dimen/padding_spacing_dp4"
+                        android:paddingEnd="@dimen/padding_spacing_dp4"
+                        android:paddingBottom="@dimen/padding_spacing_dp4">
+
+                        <TextView
+                            android:id="@+id/tv_servers_header"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/servers_header"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_test_all"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="@string/btn_test_all_servers"
+                            android:textSize="12sp"
+                            app:icon="@drawable/ic_network_check_24dp"
+                            app:iconSize="18dp"
+                            app:cornerRadius="18dp" />
+
+                    </LinearLayout>
 
                     <androidx.viewpager2.widget.ViewPager2
                         android:id="@+id/view_pager"
@@ -89,27 +121,22 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <FrameLayout
+                <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                    android:id="@+id/fab"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|end"
-                    android:layout_marginEnd="@dimen/padding_spacing_dp16">
-
-                    <com.google.android.material.floatingactionbutton.FloatingActionButton
-                        android:id="@+id/fab"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="bottom|end"
-                        android:layout_marginBottom="@dimen/view_height_dp36"
-                        android:clickable="true"
-                        android:contentDescription="@string/tasker_start_service"
-                        android:focusable="true"
-                        android:nextFocusLeft="@+id/layout_test"
-                        android:src="@drawable/ic_play_24dp"
-                        app:tint="@color/colorWhite"
-                        app:layout_anchorGravity="bottom|right|end" />
-
-                </FrameLayout>
+                    android:layout_marginEnd="@dimen/padding_spacing_dp16"
+                    android:layout_marginBottom="@dimen/view_height_dp36"
+                    android:clickable="true"
+                    android:contentDescription="@string/btn_connect"
+                    android:focusable="true"
+                    android:nextFocusLeft="@+id/layout_test"
+                    android:text="@string/btn_connect"
+                    android:textColor="@color/colorWhite"
+                    app:icon="@drawable/ic_play_24dp"
+                    app:iconTint="@color/colorWhite"
+                    app:layout_anchorGravity="bottom|right|end" />
             </androidx.coordinatorlayout.widget.CoordinatorLayout>
         </RelativeLayout>
     </LinearLayout>

@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.contracts.MainAdapterListener
@@ -53,8 +54,6 @@ class MainRecyclerAdapter(
             val guid = data[position].guid
             val profile = data[position].profile
 
-            holder.itemView.setBackgroundColor(Color.TRANSPARENT)
-
             //Name address
             holder.itemMainBinding.tvName.text = profile.remarks
             holder.itemMainBinding.tvStatistics.text = getAddress(profile)
@@ -64,20 +63,26 @@ class MainRecyclerAdapter(
             val aff = MmkvManager.decodeServerAffiliationInfo(guid)
             val delayMs = aff?.testDelayMillis ?: 0L
             if (delayMs > 0L) {
-                holder.itemMainBinding.tvTestResult.text = "\u2713 ${delayMs}ms"
+                holder.itemMainBinding.tvTestResult.text = "${delayMs}ms"
                 holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPing))
             } else if (delayMs < 0L) {
-                holder.itemMainBinding.tvTestResult.text = "\u2717 Error"
+                holder.itemMainBinding.tvTestResult.text = "Error"
                 holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPingRed))
             } else {
                 holder.itemMainBinding.tvTestResult.text = ""
             }
 
-            //layoutIndicator
-            if (guid == MmkvManager.getSelectServer()) {
+            // Card + indicator styling based on selection
+            val isSelected = guid == MmkvManager.getSelectServer()
+            val cardView = holder.itemView as? MaterialCardView
+            if (isSelected) {
                 holder.itemMainBinding.layoutIndicator.setBackgroundResource(R.color.colorIndicator)
+                cardView?.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorSelectedCard))
+                cardView?.strokeColor = ContextCompat.getColor(context, R.color.colorSelectedBorder)
             } else {
                 holder.itemMainBinding.layoutIndicator.setBackgroundResource(0)
+                cardView?.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorCardBackground))
+                cardView?.strokeColor = ContextCompat.getColor(context, R.color.colorCardBorder)
             }
 
             //subscription remarks
@@ -165,11 +170,11 @@ class MainRecyclerAdapter(
 
     open class BaseViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun onItemSelected() {
-            itemView.setBackgroundColor(Color.LTGRAY)
+            (itemView as? MaterialCardView)?.alpha = 0.7f
         }
 
         fun onItemClear() {
-            itemView.setBackgroundColor(0)
+            (itemView as? MaterialCardView)?.alpha = 1.0f
         }
     }
 

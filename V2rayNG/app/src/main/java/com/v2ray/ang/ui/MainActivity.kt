@@ -94,6 +94,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
         binding.fab.setOnClickListener { handleFabAction() }
         binding.layoutTest.setOnClickListener { handleLayoutTestClick() }
+        binding.btnTestAll.setOnClickListener { mainViewModel.testAllRealPing() }
 
         setupGroupTab()
         setupViewModel()
@@ -107,9 +108,14 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         mainViewModel.updateTestResultAction.observe(this) { setTestState(it) }
         mainViewModel.isRunning.observe(this) { isRunning ->
             applyRunningState(false, isRunning)
+            if (isRunning) {
+                scheduleAutoCheck()
+            }
         }
         mainViewModel.isTesting.observe(this) { isTesting ->
             binding.progressBar.visibility = if (isTesting) android.view.View.VISIBLE else android.view.View.INVISIBLE
+            binding.btnTestAll.isEnabled = !isTesting
+            binding.btnTestAll.text = getString(if (isTesting) R.string.btn_testing_servers else R.string.btn_test_all_servers)
         }
         mainViewModel.startListenBroadcast()
         mainViewModel.initAssets(assets)
@@ -177,26 +183,39 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         }
     }
 
+    private fun scheduleAutoCheck() {
+        lifecycleScope.launch {
+            delay(3000)
+            if (mainViewModel.isRunning.value == true) {
+                setTestState(getString(R.string.connection_test_testing))
+                mainViewModel.testCurrentServerRealPing()
+            }
+        }
+    }
+
     private fun setTestState(content: String?) {
         binding.tvTestState.text = content
     }
 
-    private  fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
+    private fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
         if (isLoading) {
-            binding.fab.setImageResource(R.drawable.ic_fab_check)
+            binding.fab.setIconResource(R.drawable.ic_fab_check)
+            binding.fab.text = getString(R.string.btn_connect)
             return
         }
 
         if (isRunning) {
-            binding.fab.setImageResource(R.drawable.ic_stop_24dp)
+            binding.fab.setIconResource(R.drawable.ic_stop_24dp)
+            binding.fab.text = getString(R.string.btn_disconnect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_active))
-            binding.fab.contentDescription = getString(R.string.action_stop_service)
+            binding.fab.contentDescription = getString(R.string.btn_disconnect)
             setTestState(getString(R.string.connection_connected))
             binding.layoutTest.isFocusable = true
         } else {
-            binding.fab.setImageResource(R.drawable.ic_play_24dp)
+            binding.fab.setIconResource(R.drawable.ic_play_24dp)
+            binding.fab.text = getString(R.string.btn_connect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_inactive))
-            binding.fab.contentDescription = getString(R.string.tasker_start_service)
+            binding.fab.contentDescription = getString(R.string.btn_connect)
             setTestState(getString(R.string.connection_not_connected))
             binding.layoutTest.isFocusable = false
         }
@@ -250,12 +269,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         }
 
         // Phase 2: Manual import and export removed
-
-        R.id.real_ping_all -> {
-            toast(getString(R.string.connection_test_testing_count, mainViewModel.serversCache.count()))
-            mainViewModel.testAllRealPing()
-            true
-        }
 
         R.id.service_restart -> {
             restartV2Ray()

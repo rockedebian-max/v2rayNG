@@ -46,11 +46,6 @@
         android:title="@string/title_del_invalid_config"
         app:showAsAction="never" />
     <item
-        android:id="@+id/real_ping_all"
-        android:icon="@drawable/ic_network_check_24dp"
-        android:title="@string/title_real_ping_all_server"
-        app:showAsAction="ifRoom" />
-    <item
         android:id="@+id/sub_update"
         android:title="@string/title_sub_update"
         app:showAsAction="never" />
