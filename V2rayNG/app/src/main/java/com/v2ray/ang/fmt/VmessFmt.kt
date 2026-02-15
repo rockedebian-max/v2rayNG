@@ -28,7 +28,7 @@ object VmessFmt : FmtBase() {
             return parseVmessStd(str)
         }
 
-        val allowInsecure = MmkvManager.decodeSettingsBool(AppConfig.PREF_ALLOW_INSECURE, false)
+        val allowInsecure = MmkvManager.decodeSettingsBool(AppConfig.PREF_ALLOW_INSECURE, true)
         val config = ProfileItem.create(EConfigType.VMESS)
 
         var result = str.replace(EConfigType.VMESS.protocolScheme, "")
@@ -156,7 +156,7 @@ object VmessFmt : FmtBase() {
      * @return the parsed ProfileItem object, or null if parsing fails
      */
     fun parseVmessStd(str: String): ProfileItem? {
-        val allowInsecure = MmkvManager.decodeSettingsBool(AppConfig.PREF_ALLOW_INSECURE, false)
+        val allowInsecure = MmkvManager.decodeSettingsBool(AppConfig.PREF_ALLOW_INSECURE, true)
         val config = ProfileItem.create(EConfigType.VMESS)
 
         val uri = URI(Utils.fixIllegalUrl(str))

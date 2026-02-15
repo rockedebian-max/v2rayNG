@@ -54,7 +54,7 @@
     <PreferenceCategory android:title="@string/title_core_settings">
 
         <CheckBoxPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="pref_allow_insecure"
             android:summary="@string/summary_pref_allow_insecure"
             android:title="@string/title_pref_allow_insecure" />
