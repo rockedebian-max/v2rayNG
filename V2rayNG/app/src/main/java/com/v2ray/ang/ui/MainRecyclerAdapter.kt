@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui
 
+import android.animation.AnimatorInflater
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
@@ -81,8 +82,9 @@ class MainRecyclerAdapter(
             // Card + indicator styling based on selection
             val isSelected = guid == MmkvManager.getSelectServer()
             val cardView = holder.itemView as? MaterialCardView
+            val indicator = holder.itemMainBinding.layoutIndicator
             if (isSelected) {
-                holder.itemMainBinding.layoutIndicator.setBackgroundResource(R.drawable.indicator_active)
+                indicator.setBackgroundResource(R.drawable.indicator_active)
                 cardView?.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorSelectedCard))
                 cardView?.strokeColor = ContextCompat.getColor(context, R.color.colorSelectedBorder)
                 cardView?.strokeWidth = 2.dpToPx(context)
@@ -91,8 +93,17 @@ class MainRecyclerAdapter(
                     R.drawable.ic_shield_small, 0, 0, 0
                 )
                 holder.itemMainBinding.tvName.compoundDrawablePadding = 6.dpToPx(context)
+                // Breathing pulse on indicator
+                indicator.tag?.let { (it as? android.animation.Animator)?.cancel() }
+                val pulse = AnimatorInflater.loadAnimator(context, R.anim.pulse_breath)
+                pulse.setTarget(indicator)
+                pulse.start()
+                indicator.tag = pulse
             } else {
-                holder.itemMainBinding.layoutIndicator.setBackgroundResource(0)
+                indicator.tag?.let { (it as? android.animation.Animator)?.cancel() }
+                indicator.tag = null
+                indicator.alpha = 1f
+                indicator.setBackgroundResource(0)
                 cardView?.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorCardBackground))
                 cardView?.strokeColor = ContextCompat.getColor(context, R.color.colorCardBorder)
                 cardView?.strokeWidth = 1.dpToPx(context)

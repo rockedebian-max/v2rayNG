@@ -13,11 +13,15 @@ import com.v2ray.ang.R
 import com.v2ray.ang.databinding.ActivityIpInfoBinding
 import com.v2ray.ang.handler.SpeedtestManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class IpInfoActivity : BaseActivity() {
     private val binding by lazy { ActivityIpInfoBinding.inflate(layoutInflater) }
+    private var scanAnimJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,31 +30,55 @@ class IpInfoActivity : BaseActivity() {
         fetchIpInfo()
     }
 
+    private fun startScanAnimation(textView: android.widget.TextView, baseText: String) {
+        scanAnimJob?.cancel()
+        scanAnimJob = lifecycleScope.launch {
+            var dots = 0
+            while (isActive) {
+                dots = (dots % 3) + 1
+                textView.text = "$baseText" + ".".repeat(dots) + " █"
+                delay(400)
+            }
+        }
+    }
+
+    private fun stopScanAnimation() {
+        scanAnimJob?.cancel()
+        scanAnimJob = null
+    }
+
     private fun fetchIpInfo() {
-        binding.tvStatus.text = getString(R.string.ip_info_loading)
+        binding.tvStatus.text = "> Rastreando IP"
         binding.tvStatus.visibility = View.VISIBLE
         binding.cardIp.visibility = View.GONE
         binding.cardMap.visibility = View.GONE
+
+        startScanAnimation(binding.tvStatus, "> Rastreando IP")
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val ipInfo = SpeedtestManager.getRemoteIPInfoFull()
 
                 withContext(Dispatchers.Main) {
+                    stopScanAnimation()
+
                     if (ipInfo == null) {
                         binding.tvStatus.text = getString(R.string.ip_info_error)
                         return@withContext
                     }
 
                     val ip = ipInfo.resolvedIp() ?: "?"
-                    val country = ipInfo.resolvedCountry() ?: ""
+                    val countryCode = ipInfo.country_code ?: ipInfo.countryCode ?: ipInfo.location?.country_code
+                    val countryName = ipInfo.country_name ?: ipInfo.country ?: countryCode ?: ""
                     val city = ipInfo.resolvedCity() ?: ""
-                    val location = listOf(city, country).filter { it.isNotBlank() }.joinToString(", ")
+                    val flag = countryCodeToFlag(countryCode)
+                    val timezone = ipInfo.timezone?.substringAfterLast("/")?.replace("_", " ") ?: "—"
 
                     binding.tvIpAddress.text = ip
-                    binding.tvLocation.text = location.ifBlank { "—" }
+                    binding.tvCountry.text = if (flag != null) "$flag $countryName" else countryName.ifBlank { "—" }
+                    binding.tvCity.text = city.ifBlank { "—" }
                     binding.tvIsp.text = ipInfo.isp ?: ipInfo.organization ?: "—"
-                    binding.tvTimezone.text = ipInfo.timezone ?: "—"
+                    binding.tvTimezone.text = timezone
 
                     binding.tvStatus.visibility = View.GONE
                     binding.cardIp.visibility = View.VISIBLE
@@ -62,12 +90,14 @@ class IpInfoActivity : BaseActivity() {
                         binding.cardMap.visibility = View.VISIBLE
                         binding.tvMapLoading.visibility = View.VISIBLE
                         binding.wvMap.visibility = View.GONE
+                        startScanAnimation(binding.tvMapLoading, "> Escaneando ubicación")
                         loadMap(lat, lon)
                     }
                 }
             } catch (e: Exception) {
                 Log.e(AppConfig.TAG, "Failed to fetch IP info", e)
                 withContext(Dispatchers.Main) {
+                    stopScanAnimation()
                     binding.tvStatus.text = getString(R.string.ip_info_error)
                 }
             }
@@ -88,6 +118,7 @@ class IpInfoActivity : BaseActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                stopScanAnimation()
                 binding.wvMap.visibility = View.VISIBLE
                 binding.tvMapLoading.visibility = View.GONE
             }
@@ -99,6 +130,7 @@ class IpInfoActivity : BaseActivity() {
                 failingUrl: String?
             ) {
                 super.onReceivedError(view, errorCode, description, failingUrl)
+                stopScanAnimation()
                 binding.tvMapLoading.text = getString(R.string.ip_info_map_unavailable)
                 binding.tvMapLoading.visibility = View.VISIBLE
                 binding.wvMap.visibility = View.GONE
@@ -162,7 +194,16 @@ class IpInfoActivity : BaseActivity() {
         """.trimIndent()
     }
 
+    private fun countryCodeToFlag(code: String?): String? {
+        if (code == null || code.length != 2) return null
+        val upper = code.uppercase()
+        val first = Character.toChars(0x1F1E6 + (upper[0] - 'A'))
+        val second = Character.toChars(0x1F1E6 + (upper[1] - 'A'))
+        return String(first) + String(second)
+    }
+
     override fun onDestroy() {
+        stopScanAnimation()
         binding.wvMap.destroy()
         super.onDestroy()
     }

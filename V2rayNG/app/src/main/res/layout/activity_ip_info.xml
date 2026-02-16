@@ -18,8 +18,9 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/ip_info_loading"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+            android:fontFamily="monospace"
+            android:textSize="14sp"
+            android:textColor="#00A8FF" />
 
         <!-- IP Card -->
         <com.google.android.material.card.MaterialCardView
@@ -85,7 +86,7 @@
                     android:layout_marginBottom="12dp"
                     android:background="@color/divider_color_light" />
 
-                <!-- Location row -->
+                <!-- Row 1: Country + City -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -100,17 +101,47 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/ip_info_label_location"
+                            android:text="@string/ip_info_label_country"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp" />
 
                         <TextView
-                            android:id="@+id/tv_location"
+                            android:id="@+id/tv_country"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="15sp" />
 
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ip_info_label_city"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_city"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="15sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Row 2: ISP + Timezone -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -129,31 +160,32 @@
                             android:id="@+id/tv_isp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
 
                     </LinearLayout>
 
-                </LinearLayout>
-
-                <!-- Timezone -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="@string/ip_info_label_timezone"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:textSize="12sp" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/tv_timezone"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="15sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ip_info_label_timezone"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_timezone"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="15sp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -176,7 +208,7 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="220dp">
+                android:layout_height="300dp">
 
                 <WebView
                     android:id="@+id/wv_map"
@@ -190,7 +222,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:text="@string/ip_info_map_loading"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:fontFamily="monospace"
+                    android:textColor="#00A8FF"
                     android:textSize="13sp"
                     android:visibility="gone" />
 

@@ -150,7 +150,10 @@ object SpeedtestManager {
             .takeIf { !it.isNullOrBlank() } ?: AppConfig.IP_API_URL
 
         val httpPort = SettingsManager.getHttpPort()
-        val content = HttpUtil.getUrlContent(url, 5000, httpPort) ?: return null
+        // Try via proxy first, then direct if proxy fails (VPN not running)
+        val content = HttpUtil.getUrlContent(url, 5000, httpPort)
+            ?: HttpUtil.getUrlContent(url, 5000, 0)
+            ?: return null
         return JsonUtil.fromJson(content, IPAPIInfo::class.java)
     }
 }

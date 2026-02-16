@@ -53,6 +53,8 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private var tabMediator: TabLayoutMediator? = null
     private var connectingAnimator: AnimatorSet? = null
     private var terminalJob: Job? = null
+    private var timerJob: Job? = null
+    private var connectionStartTime: Long = 0L
 
     private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) {
@@ -146,11 +148,21 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun handleFabAction() {
+        if (mainViewModel.isRunning.value == true) {
+            applyRunningState(isLoading = true, isRunning = false)
+            V2RayServiceManager.stopVService(this)
+            return
+        }
+
+        // Validate server exists before attempting to connect
+        if (MmkvManager.getSelectServer().isNullOrEmpty()) {
+            toast(R.string.ip_info_no_server)
+            return
+        }
+
         applyRunningState(isLoading = true, isRunning = false)
 
-        if (mainViewModel.isRunning.value == true) {
-            V2RayServiceManager.stopVService(this)
-        } else if (SettingsManager.isVpnMode()) {
+        if (SettingsManager.isVpnMode()) {
             val intent = VpnService.prepare(this)
             if (intent == null) {
                 startV2Ray()
@@ -247,6 +259,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_on)
             binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_active))
             binding.layoutTest.isFocusable = true
+            startConnectionTimer()
         } else {
             binding.fab.setIconResource(R.drawable.ic_play_24dp)
             binding.fab.text = getString(R.string.btn_connect)
@@ -262,7 +275,30 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
             binding.tvToolbarSubtitle.setTextColor(typedValue.data)
             binding.layoutTest.isFocusable = false
+            stopConnectionTimer()
         }
+    }
+
+    private fun startConnectionTimer() {
+        connectionStartTime = System.currentTimeMillis()
+        binding.tvToolbarTimer.visibility = View.VISIBLE
+        timerJob?.cancel()
+        timerJob = lifecycleScope.launch {
+            while (true) {
+                val elapsed = (System.currentTimeMillis() - connectionStartTime) / 1000
+                val h = elapsed / 3600
+                val m = (elapsed % 3600) / 60
+                val s = elapsed % 60
+                binding.tvToolbarTimer.text = "[ %02d:%02d:%02d ]".format(h, m, s)
+                delay(1000)
+            }
+        }
+    }
+
+    private fun stopConnectionTimer() {
+        timerJob?.cancel()
+        timerJob = null
+        binding.tvToolbarTimer.visibility = View.GONE
     }
 
     private fun startConnectingAnimation() {

@@ -36,15 +36,34 @@
                         android:textColor="?attr/colorPrimary"
                         android:fontFamily="sans-serif-medium" />
 
-                    <TextView
-                        android:id="@+id/tv_toolbar_subtitle"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/toolbar_subtitle_off"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.05"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:fontFamily="monospace" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tv_toolbar_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/toolbar_subtitle_off"
+                            android:textSize="11sp"
+                            android:letterSpacing="0.05"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:fontFamily="monospace" />
+
+                        <TextView
+                            android:id="@+id/tv_toolbar_timer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:textSize="11sp"
+                            android:letterSpacing="0.05"
+                            android:textColor="#00E676"
+                            android:fontFamily="monospace"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -88,9 +107,9 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingStart="@dimen/padding_spacing_dp16"
-                        android:paddingTop="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="8dp">
+                        android:paddingTop="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="12dp">
 
                         <TextView
                             android:id="@+id/tv_servers_header"
@@ -98,7 +117,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/servers_header"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold"
                             android:letterSpacing="0.08"
                             android:textAllCaps="true"
@@ -108,13 +127,13 @@
                             android:id="@+id/btn_test_all"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
                             android:layout_width="wrap_content"
-                            android:layout_height="38dp"
+                            android:layout_height="42dp"
                             android:text="@string/btn_test_all_servers"
-                            android:textSize="12sp"
+                            android:textSize="13sp"
                             android:letterSpacing="0.03"
                             app:icon="@drawable/ic_network_check_24dp"
                             app:iconSize="18dp"
-                            app:cornerRadius="19dp"
+                            app:cornerRadius="21dp"
                             app:strokeColor="?attr/colorPrimary"
                             app:strokeWidth="1dp" />
 
