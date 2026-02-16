@@ -226,7 +226,7 @@
                     <LinearLayout
                         android:id="@+id/layout_test"
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/view_height_dp64"
+                        android:layout_height="@dimen/view_height_dp76"
                         android:clickable="true"
                         android:focusable="true"
                         android:nextFocusLeft="@+id/view_pager"
@@ -291,7 +291,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|end"
                     android:layout_marginEnd="@dimen/padding_spacing_dp16"
-                    android:layout_marginBottom="@dimen/view_height_dp36"
+                    android:layout_marginBottom="44dp"
                     android:clickable="true"
                     android:contentDescription="@string/btn_connect"
                     android:focusable="true"

@@ -5,6 +5,8 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.net.VpnService
 import android.os.Bundle
@@ -201,6 +203,15 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         }
     }
 
+    private fun isNetworkAvailable(): Boolean {
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                || caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+    }
+
     private fun scheduleAutoCheck() {
         setTestState(getString(R.string.connection_test_testing))
         mainViewModel.testCurrentServerRealPing()
@@ -247,19 +258,36 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         hideTerminal()
 
         if (isRunning) {
+            val hasNetwork = isNetworkAvailable()
+
             binding.fab.setIconResource(R.drawable.ic_stop_24dp)
             binding.fab.text = getString(R.string.btn_disconnect)
-            binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_active))
             binding.fab.contentDescription = getString(R.string.btn_disconnect)
-            binding.fab.elevation = 12f
-            binding.fab.outlineAmbientShadowColor = ContextCompat.getColor(this, R.color.color_fab_active)
-            binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, R.color.color_fab_active)
             binding.progressBar.visibility = View.INVISIBLE
-            setTestState(getString(R.string.connection_connected))
-            binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_on)
-            binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_active))
             binding.layoutTest.isFocusable = true
             startConnectionTimer()
+
+            if (hasNetwork) {
+                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_active))
+                binding.fab.elevation = 12f
+                binding.fab.outlineAmbientShadowColor = ContextCompat.getColor(this, R.color.color_fab_active)
+                binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, R.color.color_fab_active)
+                setTestState(getString(R.string.connection_connected))
+                binding.tvTestState.setTextColor(0xFF00B4FF.toInt()) // restore cyan
+                binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_on)
+                binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_active))
+            } else {
+                // Tunnel active but no network — warn the user
+                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_warning))
+                binding.fab.elevation = 12f
+                binding.fab.outlineAmbientShadowColor = ContextCompat.getColor(this, R.color.color_fab_warning)
+                binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, R.color.color_fab_warning)
+                setTestState(getString(R.string.connection_connected_no_network))
+                binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_no_network)
+                binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_warning))
+                binding.tvTestState.setTextColor(ContextCompat.getColor(this, R.color.color_fab_warning))
+                startTerminalNoNetwork()
+            }
         } else {
             binding.fab.setIconResource(R.drawable.ic_play_24dp)
             binding.fab.text = getString(R.string.btn_connect)
@@ -270,6 +298,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, android.R.color.transparent)
             binding.progressBar.visibility = View.INVISIBLE
             setTestState(getString(R.string.connection_not_connected))
+            binding.tvTestState.setTextColor(0xFF00B4FF.toInt()) // restore cyan
             binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_off)
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
@@ -351,6 +380,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             if (isConnecting) R.array.terminal_connecting else R.array.terminal_disconnecting
         )
         binding.tvTerminal.text = ""
+        binding.tvTerminal.setTextColor(0xFF00B4FF.toInt()) // restore cyan
         binding.cardTerminal.visibility = View.VISIBLE
 
         terminalJob = lifecycleScope.launch {
@@ -369,6 +399,30 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             }
             // Keep visible briefly then fade
             delay(1500L)
+            hideTerminal()
+        }
+    }
+
+    private fun startTerminalNoNetwork() {
+        terminalJob?.cancel()
+        val lines = resources.getStringArray(R.array.terminal_no_network)
+        binding.tvTerminal.text = ""
+        binding.tvTerminal.setTextColor(0xFFFFB300.toInt()) // warning amber color
+        binding.cardTerminal.visibility = View.VISIBLE
+
+        terminalJob = lifecycleScope.launch {
+            val sb = StringBuilder()
+            for (line in lines) {
+                for (ch in line) {
+                    sb.append(ch)
+                    binding.tvTerminal.text = sb.toString() + "█"
+                    delay(if (ch == '…' || ch == '—') 60L else 18L)
+                }
+                sb.append("\n")
+                binding.tvTerminal.text = sb.toString()
+                delay(350L)
+            }
+            delay(3000L)
             hideTerminal()
         }
     }
@@ -527,8 +581,8 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         // Handle navigation view item clicks here.
         when (item.itemId) {
             R.id.ip_info -> startActivity(Intent(this, IpInfoActivity::class.java))
-            R.id.per_app_proxy_settings -> requestActivityLauncher.launch(Intent(this, PerAppProxyActivity::class.java))
             R.id.settings -> requestActivityLauncher.launch(Intent(this, SettingsActivity::class.java))
+            R.id.user_manual -> startActivity(Intent(this, ManualActivity::class.java))
         }
 
         binding.drawerLayout.closeDrawer(GravityCompat.START)

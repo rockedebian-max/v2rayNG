@@ -1,10 +1,12 @@
 package com.v2ray.ang.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.preference.CheckBoxPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
+import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
@@ -64,6 +66,11 @@ class SettingsActivity : BaseActivity() {
             addPreferencesFromResource(R.xml.pref_settings)
 
             initPreferenceSummaries()
+
+            findPreference<Preference>("pref_per_app_proxy")?.setOnPreferenceClickListener {
+                startActivity(Intent(requireContext(), PerAppProxyActivity::class.java))
+                true
+            }
 
             localDns?.setOnPreferenceChangeListener { _, any ->
                 updateLocalDns(any as Boolean)

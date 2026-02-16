@@ -141,6 +141,7 @@
     <string name="menu_item_export_proxy_app">Exportar al portapapeles</string>
     <string name="menu_item_import_proxy_app">Importar del portapapeles</string>
     <string name="per_app_proxy_settings">Proxy por aplicación</string>
+    <string name="summary_per_app_proxy">Elegir qué apps usan el VPN</string>
     <string name="per_app_proxy_settings_enable">Activar proxy por app</string>
     <string name="per_app_loading">Cargando aplicaciones…</string>
     <string name="per_app_proxy_info">Esta opción permite elegir qué aplicaciones pasan por la VPN.\n\nSi la activas, solo las apps que selecciones usarán la conexión protegida. Las demás se conectarán directamente.\n\n⚠ No la actives a menos que sepas lo que haces. Si seleccionas las apps incorrectas, podrías perder conectividad en algunas aplicaciones.</string>
@@ -326,6 +327,7 @@
     <string name="toolbar_brand_name" translatable="false">CYBERGUARD</string>
     <string name="nav_header_tagline" translatable="false">Protección Digital</string>
     <string name="toolbar_subtitle_on">[ TÚNEL ACTIVO ]</string>
+    <string name="toolbar_subtitle_no_network">[ SIN RED ]</string>
     <string name="toolbar_subtitle_off">[ DESCONECTADO ]</string>
     <string name="toolbar_subtitle_connecting">[ CONECTANDO… ]</string>
     <string name="btn_connect">Conectar</string>
@@ -352,6 +354,7 @@
     <string name="connection_test_fail">Internet no disponible</string>
     <string name="connection_test_error_status_code">Código de error: #%d</string>
     <string name="connection_connected">Conectado — toca para verificar</string>
+    <string name="connection_connected_no_network">Túnel activo — sin acceso a red</string>
     <string name="connection_not_connected">Sin conexión</string>
     <string name="connection_runing_task_left">Pruebas restantes: %s</string>
 
@@ -449,6 +452,12 @@
     </string-array>
 
     <!-- Terminal hacker messages -->
+    <string-array name="terminal_no_network">
+        <item>[!] ADVERTENCIA: No se detecta conexión de red</item>
+        <item>[!] El túnel VPN está activo pero sin acceso a internet</item>
+        <item>[!] Verifica tu WiFi o datos móviles</item>
+    </string-array>
+
     <string-array name="terminal_connecting">
         <item>$ cyberguard --init-tunnel</item>
         <item>[+] Inicializando túnel seguro…</item>
@@ -459,6 +468,23 @@
         <item>[+] Enrutando tráfico por VPN…</item>
         <item>[✓] Conexión establecida — túnel activo</item>
     </string-array>
+
+    <!-- Manual de Uso -->
+    <string name="title_user_manual">Manual de uso</string>
+    <string name="manual_section1_title">1. Importar servidores</string>
+    <string name="manual_section1_body">Toca el botón + en la barra superior para agregar servidores. Puedes importar de tres formas:\n\n• Escanear QR: Apunta la cámara al código QR del servidor.\n• Portapapeles: Copia el enlace del servidor y toca \"Importar desde portapapeles\".\n• Archivo local: Selecciona un archivo de configuración desde tu dispositivo.\n\nSin servidores, la app no puede conectarse.</string>
+    <string name="manual_section2_title">2. Probar servidores</string>
+    <string name="manual_section2_body">IMPORTANTE: Antes de seleccionar un servidor, toca el botón \"Probar servidores\" en la parte superior de la lista.\n\nEsto mide el tiempo de respuesta (ping) de cada servidor. Espera a que termine la prueba — verás los resultados junto a cada servidor:\n\n• Verde: Excelente conexión\n• Amarillo: Conexión aceptable\n• Rojo: Conexión lenta\n• Sin resultado: Servidor no disponible\n\nLos servidores se ordenan automáticamente del mejor al peor.</string>
+    <string name="manual_section3_title">3. Seleccionar servidor</string>
+    <string name="manual_section3_body">Después de probar, toca el servidor con mejor resultado (el de arriba si ya se ordenaron). El servidor seleccionado se resaltará.\n\nSi un servidor no funciona, prueba con otro de la lista.</string>
+    <string name="manual_section4_title">4. Conectar</string>
+    <string name="manual_section4_body">Toca el botón \"Conectar\" (abajo a la derecha). La app mostrará una animación de terminal mientras establece la conexión.\n\nEstados del botón:\n• Conectar (gris): Listo para conectar\n• Conectando… (azul pulsante): Estableciendo túnel\n• Detener (azul): Conectado y funcionando\n• Detener (ámbar): Túnel activo pero sin internet — verifica tu WiFi o datos móviles</string>
+    <string name="manual_section5_title">5. Barra inferior</string>
+    <string name="manual_section5_body">La barra inferior muestra el estado de la conexión en tiempo real:\n\n• \"Sin conexión\": No estás conectado\n• \"Estableciendo conexión segura…\": Conectando\n• \"Conectado — toca para verificar\": Toca la barra para hacer una prueba de velocidad\n• \"Túnel activo — sin acceso a red\": El VPN funciona pero no tienes internet\n• \"Conexión exitosa: Xms\": Todo funciona, X es el tiempo de respuesta</string>
+    <string name="manual_section6_title">6. Ubicación IP</string>
+    <string name="manual_section6_body">En el menú lateral encontrarás \"Ubicación IP\". Esto te muestra la dirección IP que ven los sitios web cuando navegas con el VPN activo.\n\nSi la IP muestra otro país, tu tráfico está siendo enrutado correctamente por el servidor VPN.</string>
+    <string name="manual_section7_title">7. Proxy por aplicación</string>
+    <string name="manual_section7_body">En \"Proxy por aplicación\" puedes elegir qué apps usan el VPN y cuáles no.\n\nPor defecto, todo el tráfico pasa por el VPN. Si necesitas que alguna app se conecte directamente (sin VPN), desactívala en esta sección.</string>
 
     <string-array name="terminal_disconnecting">
         <item>$ cyberguard --disconnect</item>

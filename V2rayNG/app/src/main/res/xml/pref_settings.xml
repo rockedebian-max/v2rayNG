@@ -33,6 +33,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/title_vpn_settings">
+        <Preference
+            android:key="pref_per_app_proxy"
+            android:title="@string/per_app_proxy_settings"
+            android:summary="@string/summary_per_app_proxy"
+            android:icon="@drawable/ic_per_apps_24dp" />
+
         <CheckBoxPreference
             android:key="pref_local_dns_enabled"
             android:summary="@string/summary_pref_local_dns_enabled"
