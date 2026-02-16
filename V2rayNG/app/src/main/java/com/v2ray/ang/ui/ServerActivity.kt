@@ -624,23 +624,30 @@ class ServerActivity : BaseActivity() {
      */
     private fun deleteServer(): Boolean {
         if (editGuid.isNotEmpty()) {
-            if (editGuid != MmkvManager.getSelectServer()) {
-                if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {
-                    AlertDialog.Builder(this).setMessage(R.string.del_config_comfirm)
-                        .setPositiveButton(android.R.string.ok) { _, _ ->
-                            MmkvManager.removeServer(editGuid)
-                            finish()
-                        }
-                        .setNegativeButton(android.R.string.cancel) { _, _ ->
-                            // do nothing
-                        }
-                        .show()
-                } else {
-                    MmkvManager.removeServer(editGuid)
-                    finish()
-                }
-            } else {
+            // Block deletion of active server while VPN is running
+            if (editGuid == MmkvManager.getSelectServer() && isRunning) {
                 toast(R.string.toast_action_not_allowed)
+                return true
+            }
+            if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {
+                AlertDialog.Builder(this).setMessage(R.string.del_config_comfirm)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        if (editGuid == MmkvManager.getSelectServer()) {
+                            MmkvManager.setSelectServer("")
+                        }
+                        MmkvManager.removeServer(editGuid)
+                        finish()
+                    }
+                    .setNegativeButton(android.R.string.cancel) { _, _ ->
+                        // do nothing
+                    }
+                    .show()
+            } else {
+                if (editGuid == MmkvManager.getSelectServer()) {
+                    MmkvManager.setSelectServer("")
+                }
+                MmkvManager.removeServer(editGuid)
+                finish()
             }
         }
         return true

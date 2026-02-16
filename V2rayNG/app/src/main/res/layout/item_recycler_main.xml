@@ -25,9 +25,9 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="4dp"
-        android:paddingTop="12dp"
+        android:paddingTop="14dp"
         android:paddingEnd="12dp"
-        android:paddingBottom="12dp">
+        android:paddingBottom="14dp">
 
         <!-- Selection indicator bar -->
         <LinearLayout
@@ -91,11 +91,9 @@
 
                 <TextView
                     android:id="@+id/tv_statistics"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:lines="1"
-                    android:textSize="12sp" />
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

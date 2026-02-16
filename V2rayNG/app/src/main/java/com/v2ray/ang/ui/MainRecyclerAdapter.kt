@@ -95,7 +95,7 @@ class MainRecyclerAdapter(
                 holder.itemMainBinding.tvName.compoundDrawablePadding = 6.dpToPx(context)
                 // Breathing pulse on indicator
                 indicator.tag?.let { (it as? android.animation.Animator)?.cancel() }
-                val pulse = AnimatorInflater.loadAnimator(context, R.anim.pulse_breath)
+                val pulse = AnimatorInflater.loadAnimator(context, R.animator.pulse_breath)
                 pulse.setTarget(indicator)
                 pulse.start()
                 indicator.tag = pulse

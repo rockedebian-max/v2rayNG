@@ -6,8 +6,9 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
+import android.view.View
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AppConfig
@@ -25,7 +26,6 @@ import com.v2ray.ang.util.AppManagerUtil
 import com.v2ray.ang.util.HttpUtil
 import com.v2ray.ang.util.Utils
 import com.v2ray.ang.viewmodel.PerAppProxyViewModel
-import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,18 +52,17 @@ class PerAppProxyActivity : BaseActivity() {
         }
         binding.switchPerAppProxy.isChecked = MmkvManager.decodeSettingsBool(AppConfig.PREF_PER_APP_PROXY, false)
 
-        binding.switchBypassApps.setOnCheckedChangeListener { _, isChecked ->
-            MmkvManager.encodeSettings(AppConfig.PREF_BYPASS_APPS, isChecked)
-        }
-        binding.switchBypassApps.isChecked = MmkvManager.decodeSettingsBool(AppConfig.PREF_BYPASS_APPS, false)
-
         binding.layoutSwitchBypassAppsTips.setOnClickListener {
-            Toasty.info(this, R.string.summary_pref_per_app_proxy, Toast.LENGTH_LONG, true).show()
+            AlertDialog.Builder(this)
+                .setTitle(R.string.per_app_proxy_settings)
+                .setMessage(R.string.per_app_proxy_info)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
         }
     }
 
     private fun initList() {
-        showLoading()
+        binding.layoutLoading.visibility = View.VISIBLE
 
         lifecycleScope.launch {
             try {
@@ -101,7 +100,7 @@ class PerAppProxyActivity : BaseActivity() {
             } catch (e: Exception) {
                 Log.e(ANG_PACKAGE, "Error loading apps", e)
             } finally {
-                hideLoading()
+                binding.layoutLoading.visibility = View.GONE
             }
         }
     }

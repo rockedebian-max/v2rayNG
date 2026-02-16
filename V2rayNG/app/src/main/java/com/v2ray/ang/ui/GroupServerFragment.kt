@@ -186,7 +186,8 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
      * @param position The position in the list
      */
     private fun removeServer(guid: String, position: Int) {
-        if (guid == MmkvManager.getSelectServer()) {
+        // Block deletion of the active server while VPN is running
+        if (guid == MmkvManager.getSelectServer() && mainViewModel.isRunning.value == true) {
             ownerActivity.toast(R.string.toast_action_not_allowed)
             return
         }
@@ -194,6 +195,7 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
         if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {
             AlertDialog.Builder(ownerActivity).setMessage(R.string.del_config_comfirm)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
+                    if (guid == MmkvManager.getSelectServer()) clearSelectedServer(guid)
                     removeServerSub(guid, position)
                 }
                 .setNegativeButton(android.R.string.cancel) { _, _ ->
@@ -201,7 +203,20 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
                 }
                 .show()
         } else {
+            if (guid == MmkvManager.getSelectServer()) clearSelectedServer(guid)
             removeServerSub(guid, position)
+        }
+    }
+
+    /**
+     * When deleting the selected server (while disconnected), pick next available or clear
+     */
+    private fun clearSelectedServer(removedGuid: String) {
+        val nextServer = mainViewModel.serversCache.firstOrNull { it.guid != removedGuid }
+        if (nextServer != null) {
+            MmkvManager.setSelectServer(nextServer.guid)
+        } else {
+            MmkvManager.setSelectServer("")
         }
     }
 
