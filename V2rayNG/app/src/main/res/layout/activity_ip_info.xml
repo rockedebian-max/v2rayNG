@@ -176,14 +176,12 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp">
+                android:layout_height="220dp">
 
-                <ImageView
-                    android:id="@+id/iv_map"
+                <WebView
+                    android:id="@+id/wv_map"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:contentDescription="@string/ip_info_map"
-                    android:scaleType="centerCrop"
                     android:visibility="gone" />
 
                 <TextView

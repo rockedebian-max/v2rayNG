@@ -24,7 +24,7 @@ object SubscriptionUpdater {
                 .setWhen(0)
                 .setTicker("Update")
                 .setContentTitle(context.getString(R.string.title_pref_auto_update_subscription))
-                .setSmallIcon(R.drawable.ic_stat_name)
+                .setSmallIcon(R.drawable.ic_stat_shield)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
