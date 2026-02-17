@@ -23,7 +23,10 @@ import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.helper.ItemTouchHelperAdapter
 import com.v2ray.ang.helper.ItemTouchHelperViewHolder
 import com.v2ray.ang.viewmodel.MainViewModel
+import java.text.SimpleDateFormat
 import java.util.Collections
+import java.util.Date
+import java.util.Locale
 
 class MainRecyclerAdapter(
     private val mainViewModel: MainViewModel,
@@ -58,7 +61,6 @@ class MainRecyclerAdapter(
 
             //Name address
             holder.itemMainBinding.tvName.text = profile.remarks
-            holder.itemMainBinding.tvStatistics.text = getAddress(profile)
             holder.itemMainBinding.tvType.text = profile.configType.name
 
             //TestResult - color-coded ping
@@ -115,6 +117,28 @@ class MainRecyclerAdapter(
             val subRemarks = getSubscriptionRemarks(profile)
             holder.itemMainBinding.tvSubscription.text = subRemarks
             holder.itemMainBinding.layoutSubscription.visibility = if (subRemarks.isEmpty()) View.GONE else View.VISIBLE
+
+            // Expiration display
+            val expiresAt = profile.expiresAt
+            if (expiresAt != null && expiresAt > 0) {
+                val daysLeft = ((expiresAt - System.currentTimeMillis()) / 86_400_000L)
+                holder.itemMainBinding.tvStatistics.visibility = View.VISIBLE
+                holder.itemMainBinding.tvStatistics.text = when {
+                    daysLeft < 0 -> context.getString(R.string.expiration_expired)
+                    daysLeft == 0L -> context.getString(R.string.expiration_today)
+                    daysLeft == 1L -> context.getString(R.string.expiration_tomorrow)
+                    daysLeft < 7 -> context.getString(R.string.expiration_days, daysLeft)
+                    else -> context.getString(R.string.expiration_date, SimpleDateFormat("dd/MM/yy", Locale.getDefault()).format(Date(expiresAt)))
+                }
+                holder.itemMainBinding.tvStatistics.setTextColor(when {
+                    daysLeft < 0 -> 0xFFE53E6B.toInt()
+                    daysLeft < 3 -> 0xFFFF9800.toInt()
+                    daysLeft < 7 -> 0xFFFFB300.toInt()
+                    else -> 0xFF5A6B7A.toInt()
+                })
+            } else {
+                holder.itemMainBinding.tvStatistics.visibility = View.GONE
+            }
 
             //layout - Phase 2: Only show remove button, hide share and edit
             holder.itemMainBinding.layoutShare.visibility = View.GONE

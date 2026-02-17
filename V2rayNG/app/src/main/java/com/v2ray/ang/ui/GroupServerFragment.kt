@@ -25,6 +25,7 @@ import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.helper.SimpleItemTouchHelperCallback
 import com.v2ray.ang.viewmodel.MainViewModel
+import androidx.core.view.isVisible
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -72,8 +73,8 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
             if (mainViewModel.subscriptionId != subId) {
                 return@observe
             }
-            // Log.d(TAG, "GroupServerFragment updateListAction subId=$subId")
             adapter.setData(mainViewModel.serversCache, index)
+            updateEmptyState()
         }
 
         // Log.d(TAG, "GroupServerFragment onViewCreated: subId=$subId")
@@ -82,6 +83,13 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
     override fun onResume() {
         super.onResume()
         mainViewModel.subscriptionIdChanged(subId)
+        updateEmptyState()
+    }
+
+    private fun updateEmptyState() {
+        val isEmpty = mainViewModel.serversCache.isEmpty()
+        binding.layoutEmptyState.isVisible = isEmpty
+        binding.recyclerView.isVisible = !isEmpty
     }
 
     /**
@@ -244,6 +252,8 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
             adapter.setSelectServer(fromPosition, toPosition)
 
             if (mainViewModel.isRunning.value == true) {
+                // Fix #7: Show feedback when switching server while connected
+                ownerActivity.toast(R.string.toast_server_switching)
                 ownerActivity.restartV2Ray()
             }
         }

@@ -98,10 +98,10 @@ object AngConfigManager {
      * @param append Whether to append the configurations.
      * @return A pair containing the number of configurations and subscriptions imported.
      */
-    fun importBatchConfig(server: String?, subid: String, append: Boolean): Pair<Int, Int> {
-        var count = parseBatchConfig(Utils.decode(server), subid, append)
+    fun importBatchConfig(server: String?, subid: String, append: Boolean, expiresAt: Long? = null): Pair<Int, Int> {
+        var count = parseBatchConfig(Utils.decode(server), subid, append, expiresAt)
         if (count <= 0) {
-            count = parseBatchConfig(server, subid, append)
+            count = parseBatchConfig(server, subid, append, expiresAt)
         }
         if (count <= 0) {
             count = parseCustomConfigServer(server, subid)
@@ -153,7 +153,7 @@ object AngConfigManager {
      * @param append Whether to append the configurations.
      * @return The number of configurations parsed.
      */
-    private fun parseBatchConfig(servers: String?, subid: String, append: Boolean): Int {
+    private fun parseBatchConfig(servers: String?, subid: String, append: Boolean, expiresAt: Long? = null): Int {
         try {
             if (servers == null) {
                 return 0
@@ -181,7 +181,7 @@ object AngConfigManager {
                 .distinct()
                 .reversed()
                 .forEach {
-                    val resId = parseConfig(it, subid, subItem, removedSelectedServer)
+                    val resId = parseConfig(it, subid, subItem, removedSelectedServer, expiresAt)
                     if (resId == 0) {
                         count++
                     }
@@ -269,7 +269,8 @@ object AngConfigManager {
         str: String?,
         subid: String,
         subItem: SubscriptionItem?,
-        removedSelectedServer: ProfileItem?
+        removedSelectedServer: ProfileItem?,
+        expiresAt: Long? = null
     ): Int {
         try {
             if (str == null || TextUtils.isEmpty(str)) {
@@ -306,6 +307,7 @@ object AngConfigManager {
 
             config.subscriptionId = subid
             config.description = generateDescription(config)
+            config.expiresAt = expiresAt
             val guid = MmkvManager.encodeServerConfig("", config)
             if (removedSelectedServer != null &&
                 config.server == removedSelectedServer.server && config.serverPort == removedSelectedServer.serverPort

@@ -139,6 +139,18 @@ object NotificationManager {
     }
 
     /**
+     * Updates the notification content text (e.g., for no-network warning).
+     * @param text The text to display.
+     */
+    fun updateContentText(text: String) {
+        if (mBuilder != null) {
+            mBuilder?.setContentText(text)
+            mBuilder?.setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            getNotificationManager()?.notify(NOTIFICATION_ID, mBuilder?.build())
+        }
+    }
+
+    /**
      * Cancels the notification.
      */
     fun cancelNotification() {

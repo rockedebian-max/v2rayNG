@@ -13,6 +13,7 @@ data class ProfileItem(
     val configType: EConfigType,
     var subscriptionId: String = "",
     var addedTime: Long = System.currentTimeMillis(),
+    var expiresAt: Long? = null,
 
     var remarks: String = "",
     var description: String? = null,

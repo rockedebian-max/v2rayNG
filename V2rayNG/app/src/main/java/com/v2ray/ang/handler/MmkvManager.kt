@@ -690,4 +690,44 @@ object MmkvManager {
     }
 
     //endregion
+
+    //region Anti-tamper & Expiration
+
+    fun getLastSeenTime(): Long = settingsStorage.decodeLong("LAST_SEEN_TIME", 0L)
+
+    fun updateLastSeenTime(time: Long) {
+        val current = getLastSeenTime()
+        if (time > current) {
+            settingsStorage.encode("LAST_SEEN_TIME", time)
+        }
+    }
+
+    fun isClockTampered(): Boolean {
+        val lastSeen = getLastSeenTime()
+        if (lastSeen == 0L) return false
+        return System.currentTimeMillis() < lastSeen - 3_600_000L
+    }
+
+    fun removeExpiredServers(): Int {
+        var count = 0
+        val now = System.currentTimeMillis()
+        val serverList = decodeServerList()
+        val toRemove = mutableListOf<String>()
+
+        for (guid in serverList) {
+            val config = decodeServerConfig(guid) ?: continue
+            val exp = config.expiresAt ?: continue
+            if (now > exp) {
+                toRemove.add(guid)
+            }
+        }
+
+        for (guid in toRemove) {
+            removeServer(guid)
+            count++
+        }
+        return count
+    }
+
+    //endregion
 }

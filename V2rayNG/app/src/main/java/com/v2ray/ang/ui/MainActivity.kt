@@ -5,8 +5,11 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.content.Intent
 import android.content.res.ColorStateList
+import androidx.appcompat.app.AlertDialog
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.net.VpnService
 import android.os.Bundle
@@ -36,14 +39,27 @@ import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.handler.SettingsManager
+import com.v2ray.ang.handler.NotificationManager as AppNotificationManager
 import com.v2ray.ang.handler.V2RayServiceManager
+import com.v2ray.ang.util.DeviceManager
 import com.v2ray.ang.util.Utils
 import com.v2ray.ang.viewmodel.MainViewModel
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.text.InputType
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelectedListener {
     private val binding by lazy {
@@ -57,10 +73,19 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private var terminalJob: Job? = null
     private var timerJob: Job? = null
     private var connectionStartTime: Long = 0L
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var networkDebounceJob: Job? = null
+    private var isRestarting = false
+    private var adminTapCount = 0
+    private var adminTapJob: Job? = null
 
     private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) {
             startV2Ray()
+        } else {
+            // User denied VPN permission — reset UI from "Connecting" back to idle
+            applyRunningState(isLoading = false, isRunning = false)
+            toast(R.string.toast_vpn_permission_denied)
         }
     }
     private val requestActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -90,6 +115,8 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         binding.navView.setNavigationItemSelectedListener(this)
+        setupNavHeaderDeviceId()
+        setupAdminTapDetector()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
@@ -110,6 +137,23 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         setupViewModel()
         mainViewModel.reloadServerList()
 
+        // Anti-tamper: update lastSeenTime + clean expired servers
+        MmkvManager.updateLastSeenTime(System.currentTimeMillis())
+        lifecycleScope.launch {
+            verifyNetworkTime()
+            val selectedBefore = MmkvManager.getSelectServer()
+            val removed = withContext(Dispatchers.IO) { MmkvManager.removeExpiredServers() }
+            if (removed > 0) {
+                if (mainViewModel.isRunning.value == true) {
+                    val selectedAfter = MmkvManager.getSelectServer()
+                    if (selectedAfter.isNullOrEmpty() || selectedAfter != selectedBefore) {
+                        V2RayServiceManager.stopVService(this@MainActivity)
+                    }
+                }
+                mainViewModel.reloadServerList()
+            }
+        }
+
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {
         }
     }
@@ -117,9 +161,19 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private fun setupViewModel() {
         mainViewModel.updateTestResultAction.observe(this) { setTestState(it) }
         mainViewModel.isRunning.observe(this) { isRunning ->
+            if (isRestarting && !isRunning) {
+                // During restart: service stopped briefly, skip the idle flicker
+                return@observe
+            }
+            if (isRestarting && isRunning) {
+                isRestarting = false
+            }
             applyRunningState(false, isRunning)
             if (isRunning) {
                 scheduleAutoCheck()
+                registerNetworkCallback()
+            } else {
+                unregisterNetworkCallback()
             }
         }
         mainViewModel.isTesting.observe(this) { isTesting ->
@@ -143,8 +197,10 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             }
         }.also { it.attach() }
 
-        val targetIndex = groups.indexOfFirst { it.id == mainViewModel.subscriptionId }.takeIf { it >= 0 } ?: (groups.size - 1)
-        binding.viewPager.setCurrentItem(targetIndex, false)
+        if (groups.isNotEmpty()) {
+            val targetIndex = groups.indexOfFirst { it.id == mainViewModel.subscriptionId }.takeIf { it >= 0 } ?: (groups.size - 1)
+            binding.viewPager.setCurrentItem(targetIndex, false)
+        }
 
         binding.tabGroup.isVisible = groups.size > 1
     }
@@ -156,12 +212,62 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             return
         }
 
-        // Validate server exists before attempting to connect
-        if (MmkvManager.getSelectServer().isNullOrEmpty()) {
-            toast(R.string.ip_info_no_server)
+        // Fix #1: No servers — show descriptive dialog instead of brief toast
+        val selectedServer = MmkvManager.getSelectServer()
+        if (selectedServer.isNullOrEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_no_servers_title)
+                .setMessage(R.string.dialog_no_servers_message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
             return
         }
 
+        // CHECK 3: Clock tampering detected
+        if (MmkvManager.isClockTampered()) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_clock_tampered_title)
+                .setMessage(R.string.dialog_clock_tampered_message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+
+        // CHECK 4: Server expired
+        val config = MmkvManager.decodeServerConfig(selectedServer)
+        if (config?.expiresAt?.let { System.currentTimeMillis() > it } == true) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_server_expired_title)
+                .setMessage(R.string.dialog_server_expired_message)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    MmkvManager.removeServer(selectedServer)
+                    mainViewModel.reloadServerList()
+                }
+                .setCancelable(false)
+                .show()
+            return
+        }
+
+        // Fix #2: Server not tested or failed — warn user and offer to test first
+        val aff = MmkvManager.decodeServerAffiliationInfo(selectedServer)
+        if (aff == null || aff.testDelayMillis <= 0L) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_untested_server_title)
+                .setMessage(R.string.dialog_untested_server_message)
+                .setPositiveButton(R.string.dialog_btn_connect_anyway) { _, _ ->
+                    proceedWithConnection()
+                }
+                .setNegativeButton(R.string.dialog_btn_test_first) { _, _ ->
+                    mainViewModel.testAllRealPing()
+                }
+                .show()
+            return
+        }
+
+        proceedWithConnection()
+    }
+
+    private fun proceedWithConnection() {
         applyRunningState(isLoading = true, isRunning = false)
 
         if (SettingsManager.isVpnMode()) {
@@ -181,7 +287,8 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             setTestState(getString(R.string.connection_test_testing))
             mainViewModel.testCurrentServerRealPing()
         } else {
-            // service not running: keep existing no-op (could show a message if desired)
+            // Fix #4: Give feedback when tapping bottom bar while disconnected
+            toast(R.string.toast_tap_to_test_disconnected)
         }
     }
 
@@ -194,12 +301,21 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     fun restartV2Ray() {
+        // Flag prevents the isRunning observer from flickering to idle during restart
+        isRestarting = true
+        applyRunningState(isLoading = true, isRunning = false)
         if (mainViewModel.isRunning.value == true) {
             V2RayServiceManager.stopVService(this)
         }
         lifecycleScope.launch {
             delay(500)
             startV2Ray()
+            // Safety: reset flag after timeout in case service never starts
+            delay(5000)
+            if (isRestarting) {
+                isRestarting = false
+                applyRunningState(false, mainViewModel.isRunning.value == true)
+            }
         }
     }
 
@@ -207,9 +323,61 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return false
         val caps = cm.getNetworkCapabilities(network) ?: return false
-        return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        val hasTransport = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 || caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                 || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        // VALIDATED means the OS confirmed actual internet access (not just a transport)
+        val hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        return hasTransport && hasInternet
+    }
+
+    private fun registerNetworkCallback() {
+        unregisterNetworkCallback()
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            .build()
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                // Network came back — debounce to avoid rapid WiFi↔cellular switches
+                scheduleNetworkChange(hasNetwork = true)
+            }
+
+            override fun onLost(network: Network) {
+                // Network lost — debounce before showing error
+                scheduleNetworkChange(hasNetwork = false)
+            }
+        }
+        cm.registerNetworkCallback(request, networkCallback!!)
+    }
+
+    private fun scheduleNetworkChange(hasNetwork: Boolean) {
+        networkDebounceJob?.cancel()
+        networkDebounceJob = lifecycleScope.launch {
+            // Wait briefly to avoid reacting to rapid network switches (WiFi↔cellular)
+            delay(if (hasNetwork) 1500L else 2000L)
+            if (mainViewModel.isRunning.value != true) return@launch
+
+            // Re-check actual network state after debounce
+            val reallyHasNetwork = isNetworkAvailable()
+            if (reallyHasNetwork) {
+                applyRunningState(false, true)
+                restartV2Ray()
+            } else {
+                applyRunningState(false, false)
+            }
+        }
+    }
+
+    private fun unregisterNetworkCallback() {
+        networkDebounceJob?.cancel()
+        networkDebounceJob = null
+        networkCallback?.let {
+            val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+            try { cm.unregisterNetworkCallback(it) } catch (_: Exception) {}
+            networkCallback = null
+        }
     }
 
     private fun scheduleAutoCheck() {
@@ -255,7 +423,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         // Hide loading indicators
         binding.fab.isClickable = true
         binding.progressConnecting.visibility = View.GONE
-        hideTerminal()
 
         if (isRunning) {
             val hasNetwork = isNetworkAvailable()
@@ -276,17 +443,23 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 binding.tvTestState.setTextColor(0xFF00B4FF.toInt()) // restore cyan
                 binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_on)
                 binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_active))
+                AppNotificationManager.updateContentText(getString(R.string.connection_connected))
+                // Real terminal result: connected successfully
+                finishTerminalWithResult(getString(R.string.terminal_result_connected), 0xFF00C853.toInt())
             } else {
                 // Tunnel active but no network — warn the user
-                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_warning))
+                val noNetColor = ContextCompat.getColor(this, R.color.color_fab_no_network)
+                binding.fab.backgroundTintList = ColorStateList.valueOf(noNetColor)
                 binding.fab.elevation = 12f
-                binding.fab.outlineAmbientShadowColor = ContextCompat.getColor(this, R.color.color_fab_warning)
-                binding.fab.outlineSpotShadowColor = ContextCompat.getColor(this, R.color.color_fab_warning)
+                binding.fab.outlineAmbientShadowColor = noNetColor
+                binding.fab.outlineSpotShadowColor = noNetColor
                 setTestState(getString(R.string.connection_connected_no_network))
                 binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_no_network)
-                binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_warning))
-                binding.tvTestState.setTextColor(ContextCompat.getColor(this, R.color.color_fab_warning))
-                startTerminalNoNetwork()
+                binding.tvToolbarSubtitle.setTextColor(noNetColor)
+                binding.tvTestState.setTextColor(noNetColor)
+                AppNotificationManager.updateContentText(getString(R.string.notification_no_network))
+                // Real terminal result: append no-network line then show warning
+                finishTerminalWithNoNetwork()
             }
         } else {
             binding.fab.setIconResource(R.drawable.ic_play_24dp)
@@ -305,6 +478,8 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             binding.tvToolbarSubtitle.setTextColor(typedValue.data)
             binding.layoutTest.isFocusable = false
             stopConnectionTimer()
+            // Real terminal result: disconnected
+            finishTerminalWithResult(getString(R.string.terminal_result_disconnected), 0xFF00B4FF.toInt())
         }
     }
 
@@ -331,25 +506,27 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun startConnectingAnimation() {
-        // Phase 1: Scale up + fade
+        // Shrink FAB to icon-only during connecting for a cleaner look
+        binding.fab.shrink()
+
+        // Subtle pulse animation — no big scaling, no heavy opacity
         val pulseUp = ObjectAnimator.ofPropertyValuesHolder(
             binding.fab,
-            PropertyValuesHolder.ofFloat("scaleX", 1f, 1.12f),
-            PropertyValuesHolder.ofFloat("scaleY", 1f, 1.12f),
-            PropertyValuesHolder.ofFloat("alpha", 1f, 0.6f)
+            PropertyValuesHolder.ofFloat("scaleX", 1f, 1.04f),
+            PropertyValuesHolder.ofFloat("scaleY", 1f, 1.04f),
+            PropertyValuesHolder.ofFloat("alpha", 1f, 0.85f)
         ).apply {
-            duration = 600
+            duration = 700
             interpolator = AccelerateDecelerateInterpolator()
         }
 
-        // Phase 2: Scale back + restore
         val pulseDown = ObjectAnimator.ofPropertyValuesHolder(
             binding.fab,
-            PropertyValuesHolder.ofFloat("scaleX", 1.12f, 1f),
-            PropertyValuesHolder.ofFloat("scaleY", 1.12f, 1f),
-            PropertyValuesHolder.ofFloat("alpha", 0.6f, 1f)
+            PropertyValuesHolder.ofFloat("scaleX", 1.04f, 1f),
+            PropertyValuesHolder.ofFloat("scaleY", 1.04f, 1f),
+            PropertyValuesHolder.ofFloat("alpha", 0.85f, 1f)
         ).apply {
-            duration = 600
+            duration = 700
             interpolator = AccelerateDecelerateInterpolator()
         }
 
@@ -372,57 +549,124 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.fab.scaleX = 1f
         binding.fab.scaleY = 1f
         binding.fab.alpha = 1f
+        binding.fab.extend() // Restore FAB to full size with text
     }
+
+    private var terminalBuffer = StringBuilder()
 
     private fun startTerminal(isConnecting: Boolean) {
         terminalJob?.cancel()
         val lines = resources.getStringArray(
             if (isConnecting) R.array.terminal_connecting else R.array.terminal_disconnecting
         )
+        terminalBuffer = StringBuilder()
         binding.tvTerminal.text = ""
-        binding.tvTerminal.setTextColor(0xFF00B4FF.toInt()) // restore cyan
+        binding.tvTerminal.setTextColor(0xFF00B4FF.toInt()) // cyan
         binding.cardTerminal.visibility = View.VISIBLE
 
         terminalJob = lifecycleScope.launch {
-            val sb = StringBuilder()
             for (line in lines) {
-                // Type each character
                 for (ch in line) {
-                    sb.append(ch)
-                    binding.tvTerminal.text = sb.toString() + "█"
+                    terminalBuffer.append(ch)
+                    binding.tvTerminal.text = terminalBuffer.toString() + "█"
                     delay(if (ch == '…' || ch == '—') 60L else 18L)
                 }
-                // End line
-                sb.append("\n")
-                binding.tvTerminal.text = sb.toString()
+                terminalBuffer.append("\n")
+                binding.tvTerminal.text = terminalBuffer.toString()
                 delay(350L)
             }
-            // Keep visible briefly then fade
-            delay(1500L)
+            // Decorative lines done — show blinking cursor while waiting for real result
+            var blink = true
+            while (true) {
+                binding.tvTerminal.text = terminalBuffer.toString() + if (blink) "█" else " "
+                blink = !blink
+                delay(500L)
+            }
+        }
+    }
+
+    private fun finishTerminalWithResult(resultText: String, color: Int) {
+        // Only show result if terminal was active (has buffered content)
+        if (binding.cardTerminal.visibility != View.VISIBLE && terminalBuffer.isEmpty()) return
+
+        terminalJob?.cancel()
+        binding.cardTerminal.visibility = View.VISIBLE
+
+        terminalJob = lifecycleScope.launch {
+            // Type the real result line
+            for (ch in resultText) {
+                terminalBuffer.append(ch)
+                binding.tvTerminal.text = terminalBuffer.toString() + "█"
+                delay(if (ch == '…' || ch == '—') 60L else 22L)
+            }
+            terminalBuffer.append("\n")
+            binding.tvTerminal.text = terminalBuffer.toString()
+
+            // Show result briefly then fade
+            delay(3500L)
             hideTerminal()
         }
     }
 
-    private fun startTerminalNoNetwork() {
+    private fun finishTerminalWithNoNetwork() {
+        if (binding.cardTerminal.visibility != View.VISIBLE && terminalBuffer.isEmpty()) {
+            // No terminal was active — just show the no-network warning standalone
+            startTerminalNoNetworkStandalone()
+            return
+        }
+        terminalJob?.cancel()
+        binding.cardTerminal.visibility = View.VISIBLE
+        val resultLine = getString(R.string.terminal_result_no_network)
+        val warningLines = resources.getStringArray(R.array.terminal_no_network)
+
+        terminalJob = lifecycleScope.launch {
+            // Type the result line in red
+            binding.tvTerminal.setTextColor(0xFFE53E6B.toInt())
+            for (ch in resultLine) {
+                terminalBuffer.append(ch)
+                binding.tvTerminal.text = terminalBuffer.toString() + "█"
+                delay(if (ch == '…' || ch == '—') 60L else 22L)
+            }
+            terminalBuffer.append("\n")
+            binding.tvTerminal.text = terminalBuffer.toString()
+            delay(400L)
+
+            // Type the warning lines
+            for (line in warningLines) {
+                for (ch in line) {
+                    terminalBuffer.append(ch)
+                    binding.tvTerminal.text = terminalBuffer.toString() + "█"
+                    delay(if (ch == '…' || ch == '—') 60L else 18L)
+                }
+                terminalBuffer.append("\n")
+                binding.tvTerminal.text = terminalBuffer.toString()
+                delay(350L)
+            }
+            delay(5000L)
+            hideTerminal()
+        }
+    }
+
+    private fun startTerminalNoNetworkStandalone() {
         terminalJob?.cancel()
         val lines = resources.getStringArray(R.array.terminal_no_network)
+        terminalBuffer = StringBuilder()
         binding.tvTerminal.text = ""
-        binding.tvTerminal.setTextColor(0xFFFFB300.toInt()) // warning amber color
+        binding.tvTerminal.setTextColor(0xFFE53E6B.toInt())
         binding.cardTerminal.visibility = View.VISIBLE
 
         terminalJob = lifecycleScope.launch {
-            val sb = StringBuilder()
             for (line in lines) {
                 for (ch in line) {
-                    sb.append(ch)
-                    binding.tvTerminal.text = sb.toString() + "█"
+                    terminalBuffer.append(ch)
+                    binding.tvTerminal.text = terminalBuffer.toString() + "█"
                     delay(if (ch == '…' || ch == '—') 60L else 18L)
                 }
-                sb.append("\n")
-                binding.tvTerminal.text = sb.toString()
+                terminalBuffer.append("\n")
+                binding.tvTerminal.text = terminalBuffer.toString()
                 delay(350L)
             }
-            delay(3000L)
+            delay(5000L)
             hideTerminal()
         }
     }
@@ -440,8 +684,152 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             .start()
     }
 
+    // region Admin Panel Access
+
+    private fun setupNavHeaderDeviceId() {
+        val headerView = binding.navView.getHeaderView(0)
+        val tvDeviceId = headerView.findViewById<TextView>(R.id.tv_device_id)
+        val btnCopy = headerView.findViewById<ImageView>(R.id.btn_copy_device_id)
+
+        val displayId = DeviceManager.getDisplayDeviceId(this)
+        tvDeviceId.text = displayId
+
+        btnCopy.setOnClickListener {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("device_id", displayId))
+            toast(R.string.device_id_copied)
+        }
+    }
+
+    private fun setupAdminTapDetector() {
+        val headerView = binding.navView.getHeaderView(0)
+        headerView.setOnClickListener {
+            adminTapCount++
+            adminTapJob?.cancel()
+            if (adminTapCount >= 7) {
+                adminTapCount = 0
+                promptAdminPassword()
+            } else {
+                adminTapJob = lifecycleScope.launch {
+                    delay(3000L)
+                    adminTapCount = 0
+                }
+            }
+        }
+    }
+
+    private fun promptAdminPassword() {
+        val prefs = getSharedPreferences("admin_prefs", Context.MODE_PRIVATE)
+        val storedHash = prefs.getString("admin_pw_hash", null)
+
+        if (storedHash == null) {
+            showSetPasswordDialog(prefs)
+        } else {
+            showVerifyPasswordDialog(storedHash)
+        }
+    }
+
+    private fun showSetPasswordDialog(prefs: android.content.SharedPreferences) {
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = getString(R.string.admin_set_password_hint)
+            setPadding(48, 32, 48, 32)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.admin_set_password_title)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val pw = input.text.toString()
+                if (pw.length >= 6) {
+                    val hash = hashPassword(pw)
+                    prefs.edit().putString("admin_pw_hash", hash).apply()
+                    openAdminPanel()
+                } else {
+                    toast(R.string.admin_password_too_short)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showVerifyPasswordDialog(storedHash: String) {
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = getString(R.string.admin_enter_password_hint)
+            setPadding(48, 32, 48, 32)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.admin_verify_password_title)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val entered = input.text.toString()
+                if (hashPassword(entered) == storedHash) {
+                    openAdminPanel()
+                } else {
+                    toastError(R.string.admin_wrong_password)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun hashPassword(password: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val bytes = digest.digest(password.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun openAdminPanel() {
+        binding.drawerLayout.closeDrawer(GravityCompat.START)
+        startActivity(Intent(this, AdminActivity::class.java))
+    }
+
+    // endregion
+
+    // region Anti-tamper: Network Time Verification
+
+    private suspend fun verifyNetworkTime() {
+        withContext(Dispatchers.IO) {
+            try {
+                val conn = URL("https://www.google.com").openConnection() as HttpURLConnection
+                conn.requestMethod = "HEAD"
+                conn.connectTimeout = 5000
+                conn.readTimeout = 3000
+                conn.instanceFollowRedirects = false
+                conn.connect()
+                val serverDate = conn.headerFields["Date"]?.firstOrNull()
+                if (serverDate != null) {
+                    val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US)
+                    val networkTime = sdf.parse(serverDate)?.time
+                    if (networkTime != null) {
+                        MmkvManager.updateLastSeenTime(networkTime)
+                    }
+                }
+                conn.disconnect()
+            } catch (_: Exception) {
+                // No network available — local lastSeenTime still protects
+            }
+        }
+    }
+
+    // endregion
+
     override fun onResume() {
         super.onResume()
+        MmkvManager.updateLastSeenTime(System.currentTimeMillis())
+        lifecycleScope.launch {
+            val selectedBefore = MmkvManager.getSelectServer()
+            val removed = withContext(Dispatchers.IO) { MmkvManager.removeExpiredServers() }
+            if (removed > 0) {
+                if (mainViewModel.isRunning.value == true) {
+                    val selectedAfter = MmkvManager.getSelectServer()
+                    if (selectedAfter.isNullOrEmpty() || selectedAfter != selectedBefore) {
+                        V2RayServiceManager.stopVService(this@MainActivity)
+                    }
+                }
+                mainViewModel.reloadServerList()
+            }
+        }
     }
 
     override fun onPause() {
@@ -590,6 +978,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     override fun onDestroy() {
+        unregisterNetworkCallback()
         stopConnectingAnimation()
         terminalJob?.cancel()
         tabMediator?.detach()

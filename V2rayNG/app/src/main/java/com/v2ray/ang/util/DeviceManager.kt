@@ -2,6 +2,7 @@ package com.v2ray.ang.util
 
 import android.content.Context
 import android.provider.Settings
+import java.security.MessageDigest
 
 /**
  * Manages device identification for encryption seed derivation.
@@ -34,6 +35,22 @@ object DeviceManager {
             }
         } catch (e: Exception) {
             FALLBACK_SEED
+        }
+    }
+
+    /**
+     * Returns a short, human-readable Device ID for display and admin entry.
+     * Format: XXXX-XXXX-XXXX (12 hex chars from SHA-256 of ANDROID_ID)
+     */
+    fun getDisplayDeviceId(context: Context): String {
+        val seed = getDeviceSeed(context)
+        return try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            val hashBytes = digest.digest(seed.toByteArray(Charsets.UTF_8))
+            val hex = hashBytes.take(6).joinToString("") { "%02X".format(it) }
+            "${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex.substring(8, 12)}"
+        } catch (e: Exception) {
+            "0000-0000-0000"
         }
     }
 }

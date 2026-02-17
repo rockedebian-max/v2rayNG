@@ -355,7 +355,19 @@
     <string name="connection_test_error_status_code">Código de error: #%d</string>
     <string name="connection_connected">Conectado — toca para verificar</string>
     <string name="connection_connected_no_network">Túnel activo — sin acceso a red</string>
+    <string name="notification_no_network">Sin conexión a internet — verifica tu red</string>
     <string name="connection_not_connected">Sin conexión</string>
+    <string name="toast_vpn_permission_denied">Permiso VPN denegado — no se puede conectar</string>
+    <string name="toast_tap_to_test_disconnected">Conecta el VPN primero para verificar</string>
+    <string name="toast_server_switching">Cambiando de servidor…</string>
+    <string name="dialog_no_servers_title">Sin servidores</string>
+    <string name="dialog_no_servers_message">No tienes servidores configurados.\n\nToca el botón + en la barra superior para importar servidores por QR, portapapeles o archivo.</string>
+    <string name="dialog_untested_server_title">Servidor sin probar</string>
+    <string name="dialog_untested_server_message">Este servidor no ha sido probado.\n\nSe recomienda tocar \"Probar Servidores\" primero para verificar cuáles funcionan.\n\n¿Conectar de todos modos?</string>
+    <string name="dialog_btn_connect_anyway">Conectar</string>
+    <string name="dialog_btn_test_first">Probar primero</string>
+    <string name="empty_state_title">Sin servidores</string>
+    <string name="empty_state_message">Toca el botón + en la barra superior\npara importar servidores por QR,\nportapapeles o archivo</string>
     <string name="connection_runing_task_left">Pruebas restantes: %s</string>
 
     <string name="import_subscription_success">Suscripción importada correctamente</string>
@@ -466,8 +478,13 @@
         <item>[+] Encriptando canal AES-256-GCM…</item>
         <item>[+] Abriendo puerto seguro…</item>
         <item>[+] Enrutando tráfico por VPN…</item>
-        <item>[✓] Conexión establecida — túnel activo</item>
+        <item>[…] Esperando respuesta del servidor…</item>
     </string-array>
+
+    <!-- Terminal real result lines (appended when real state arrives) -->
+    <string name="terminal_result_connected">[✓] Conexión establecida — túnel activo</string>
+    <string name="terminal_result_no_network">[!] Túnel activo — sin acceso a red</string>
+    <string name="terminal_result_disconnected">[✓] Desconectado — tráfico directo</string>
 
     <!-- Manual de Uso -->
     <string name="title_user_manual">Manual de uso</string>
@@ -483,15 +500,75 @@
     <string name="manual_section5_body">La barra inferior muestra el estado de la conexión en tiempo real:\n\n• \"Sin conexión\": No estás conectado\n• \"Estableciendo conexión segura…\": Conectando\n• \"Conectado — toca para verificar\": Toca la barra para hacer una prueba de velocidad\n• \"Túnel activo — sin acceso a red\": El VPN funciona pero no tienes internet\n• \"Conexión exitosa: Xms\": Todo funciona, X es el tiempo de respuesta</string>
     <string name="manual_section6_title">6. Ubicación IP</string>
     <string name="manual_section6_body">En el menú lateral encontrarás \"Ubicación IP\". Esto te muestra la dirección IP que ven los sitios web cuando navegas con el VPN activo.\n\nSi la IP muestra otro país, tu tráfico está siendo enrutado correctamente por el servidor VPN.</string>
-    <string name="manual_section7_title">7. Proxy por aplicación</string>
-    <string name="manual_section7_body">En \"Proxy por aplicación\" puedes elegir qué apps usan el VPN y cuáles no.\n\nPor defecto, todo el tráfico pasa por el VPN. Si necesitas que alguna app se conecte directamente (sin VPN), desactívala en esta sección.</string>
-
     <string-array name="terminal_disconnecting">
         <item>$ cyberguard --disconnect</item>
         <item>[+] Cerrando túnel encriptado…</item>
         <item>[+] Limpiando rutas de red…</item>
         <item>[+] Liberando puerto…</item>
-        <item>[✓] Desconectado — tráfico directo</item>
+        <item>[…] Finalizando sesión…</item>
     </string-array>
+
+    <!-- Device ID display -->
+    <string name="device_id_label">ID:</string>
+    <string name="device_id_copy_description">Copiar Device ID</string>
+    <string name="device_id_copied">Device ID copiado al portapapeles</string>
+
+    <!-- Admin panel -->
+    <string name="admin_panel_title">Panel de Administración</string>
+    <string name="admin_hint_device_id">Device ID del cliente (ej: A3F7-B2C1-D9E4)</string>
+    <string name="admin_hint_config_link">Link(s) del servidor — uno por línea\n(vmess://, vless://, trojan://…)</string>
+    <string name="admin_btn_scan_qr">Escanear QR</string>
+    <string name="admin_btn_paste">Pegar</string>
+    <string name="admin_qr_scanned">QR escaneado correctamente</string>
+    <string name="admin_pasted">Pegado del portapapeles</string>
+    <string name="admin_btn_generate">Generar Link Encriptado</string>
+    <string name="admin_btn_copy">Copiar Link</string>
+    <string name="admin_btn_share">Compartir</string>
+    <string name="admin_btn_clear">Limpiar</string>
+    <string name="admin_share_via">Enviar config vía…</string>
+    <string name="admin_copied_to_clipboard">Link encriptado copiado</string>
+    <string name="admin_qr_description">Código QR del link encriptado</string>
+    <string name="admin_error_empty_config">Pega al menos un link de servidor</string>
+    <string name="admin_error_invalid_device_id">El Device ID debe tener formato XXXX-XXXX-XXXX</string>
+    <string name="admin_error_encryption_failed">Error al encriptar — verifica los datos</string>
+    <string name="admin_batch_count">%d links encriptados generados</string>
+    <string name="admin_set_password_title">Crear Contraseña de Admin</string>
+    <string name="admin_set_password_hint">Elige una contraseña (mín. 6 caracteres)</string>
+    <string name="admin_verify_password_title">Acceso Admin</string>
+    <string name="admin_enter_password_hint">Ingresa la contraseña de admin</string>
+    <string name="admin_wrong_password">Contraseña incorrecta</string>
+    <string name="admin_password_too_short">La contraseña debe tener al menos 6 caracteres</string>
+
+    <!-- CyberGuard import errors -->
+    <string name="cyberguard_error_no_data">Link inválido: datos encriptados faltantes</string>
+    <string name="cyberguard_error_wrong_device_title">Dispositivo Incorrecto</string>
+    <string name="cyberguard_error_wrong_device_message">Este servidor fue asignado a otro dispositivo. Contacta a tu administrador para solicitar un nuevo link para este dispositivo.</string>
+    <string name="cyberguard_error_import_failed">Error al importar la configuración</string>
+    <string name="cyberguard_import_success">Servidor importado correctamente</string>
+
+    <!-- Expiration -->
+    <string name="admin_hint_expiration">Expiración</string>
+    <string name="admin_expiration_none">Sin expiración</string>
+    <string name="admin_expiration_7d">7 días</string>
+    <string name="admin_expiration_15d">15 días</string>
+    <string name="admin_expiration_30d">30 días</string>
+    <string name="admin_expiration_60d">60 días</string>
+    <string name="admin_expiration_90d">90 días</string>
+    <string name="admin_expiration_custom">Personalizado…</string>
+    <string name="dialog_server_expired_title">Servidor Expirado</string>
+    <string name="dialog_server_expired_message">Este servidor ha expirado. Contacta a tu administrador para renovar tu acceso.</string>
+    <string name="dialog_clock_tampered_title">Hora Incorrecta</string>
+    <string name="dialog_clock_tampered_message">La fecha y hora de tu dispositivo no son correctas. Activa la hora automática en Ajustes para poder conectarte.</string>
+    <string name="dialog_config_already_expired_title">Servidor Ya Expirado</string>
+    <string name="dialog_config_already_expired_message">Este servidor ya expiró antes de importarlo. Contacta a tu administrador.</string>
+
+    <string name="admin_partial_encryption">Advertencia: %1$d servidor(es) no se pudieron encriptar</string>
+
+    <!-- Expiration display on server cards -->
+    <string name="expiration_expired">EXPIRADO</string>
+    <string name="expiration_today">Expira hoy</string>
+    <string name="expiration_tomorrow">Expira mañana</string>
+    <string name="expiration_days">Expira en %1$d días</string>
+    <string name="expiration_date">Exp: %1$s</string>
 
 </resources>
