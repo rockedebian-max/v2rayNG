@@ -76,6 +76,10 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var networkDebounceJob: Job? = null
     private var isRestarting = false
+    private var restartJob: Job? = null
+    private var lastNetworkRestartTime = 0L
+    private var hadNetworkBefore = true
+    private var isNetworkRestart = false
     private var adminTapCount = 0
     private var adminTapJob: Job? = null
 
@@ -170,6 +174,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             }
             applyRunningState(false, isRunning)
             if (isRunning) {
+                hadNetworkBefore = true
                 scheduleAutoCheck()
                 registerNetworkCallback()
             } else {
@@ -207,6 +212,11 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
     private fun handleFabAction() {
         if (mainViewModel.isRunning.value == true) {
+            // Cancel any pending restart (network switch, settings change, etc.)
+            restartJob?.cancel()
+            restartJob = null
+            isRestarting = false
+            isNetworkRestart = false
             applyRunningState(isLoading = true, isRunning = false)
             V2RayServiceManager.stopVService(this)
             return
@@ -301,19 +311,33 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     fun restartV2Ray() {
+        // Cancel any previous restart
+        restartJob?.cancel()
         // Flag prevents the isRunning observer from flickering to idle during restart
         isRestarting = true
-        applyRunningState(isLoading = true, isRunning = false)
+
+        // Only update FAB/progress — don't replace terminal if network restart is showing
+        if (!isNetworkRestart) {
+            applyRunningState(isLoading = true, isRunning = false)
+        } else {
+            // Just show loading indicators without replacing the network switch terminal
+            binding.fab.isClickable = false
+            binding.progressBar.visibility = View.VISIBLE
+            binding.progressConnecting.visibility = View.VISIBLE
+            startConnectingAnimation()
+        }
+
         if (mainViewModel.isRunning.value == true) {
             V2RayServiceManager.stopVService(this)
         }
-        lifecycleScope.launch {
+        restartJob = lifecycleScope.launch {
             delay(500)
             startV2Ray()
             // Safety: reset flag after timeout in case service never starts
             delay(5000)
             if (isRestarting) {
                 isRestarting = false
+                isNetworkRestart = false
                 applyRunningState(false, mainViewModel.isRunning.value == true)
             }
         }
@@ -321,14 +345,20 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
     private fun isNetworkAvailable(): Boolean {
         val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = cm.activeNetwork ?: return false
-        val caps = cm.getNetworkCapabilities(network) ?: return false
-        val hasTransport = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-                || caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-                || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-        // VALIDATED means the OS confirmed actual internet access (not just a transport)
-        val hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        return hasTransport && hasInternet
+        // Check all networks, skipping VPN interfaces — we want underlying connectivity
+        val allNetworks = cm.allNetworks
+        for (network in allNetworks) {
+            val caps = cm.getNetworkCapabilities(network) ?: continue
+            // Skip VPN transport — that's us
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) continue
+            val hasTransport = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                    || caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+            if (hasTransport && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun registerNetworkCallback() {
@@ -355,19 +385,51 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private fun scheduleNetworkChange(hasNetwork: Boolean) {
         networkDebounceJob?.cancel()
         networkDebounceJob = lifecycleScope.launch {
-            // Wait briefly to avoid reacting to rapid network switches (WiFi↔cellular)
-            delay(if (hasNetwork) 1500L else 2000L)
+            // Wait for network to stabilize (WiFi↔cellular switches fire multiple events)
+            delay(if (hasNetwork) 2000L else 2500L)
             if (mainViewModel.isRunning.value != true) return@launch
+            if (isRestarting) return@launch
 
-            // Re-check actual network state after debounce
             val reallyHasNetwork = isNetworkAvailable()
-            if (reallyHasNetwork) {
-                applyRunningState(false, true)
-                restartV2Ray()
+            val now = System.currentTimeMillis()
+            val cooldownMs = 30_000L // 30s cooldown between network restarts
+
+            if (!reallyHasNetwork) {
+                // Network lost — show warning UI, keep VPN tunnel state
+                hadNetworkBefore = false
+                applyRunningState(false, true) // VPN is still running, just no network
+                return@launch
+            }
+
+            if (!hadNetworkBefore && (now - lastNetworkRestartTime > cooldownMs)) {
+                // Network came BACK after being lost — restart VPN once
+                hadNetworkBefore = true
+                lastNetworkRestartTime = now
+                startNetworkSwitchRestart()
             } else {
-                applyRunningState(false, false)
+                // Network is fine, just update UI
+                hadNetworkBefore = true
+                applyRunningState(false, true)
             }
         }
+    }
+
+    private fun startNetworkSwitchRestart() {
+        isNetworkRestart = true
+
+        // Show reconnecting terminal animation
+        setTestState(getString(R.string.connection_reconnecting))
+        binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_reconnecting)
+        binding.tvToolbarSubtitle.setTextColor(
+            ContextCompat.getColor(this, R.color.color_fab_connecting)
+        )
+        AppNotificationManager.updateContentText(getString(R.string.notification_reconnecting))
+
+        // Show terminal with network switch messages
+        startTerminalNetworkSwitch()
+
+        // Perform the restart
+        restartV2Ray()
     }
 
     private fun unregisterNetworkCallback() {
@@ -444,8 +506,14 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 binding.tvToolbarSubtitle.text = getString(R.string.toolbar_subtitle_on)
                 binding.tvToolbarSubtitle.setTextColor(ContextCompat.getColor(this, R.color.color_fab_active))
                 AppNotificationManager.updateContentText(getString(R.string.connection_connected))
-                // Real terminal result: connected successfully
-                finishTerminalWithResult(getString(R.string.terminal_result_connected), 0xFF00C853.toInt())
+                // Real terminal result: show "network restored" if reconnecting, else normal
+                val terminalMsg = if (isNetworkRestart) {
+                    isNetworkRestart = false
+                    getString(R.string.terminal_result_network_back)
+                } else {
+                    getString(R.string.terminal_result_connected)
+                }
+                finishTerminalWithResult(terminalMsg, 0xFF00C853.toInt())
             } else {
                 // Tunnel active but no network — warn the user
                 val noNetColor = ContextCompat.getColor(this, R.color.color_fab_no_network)
@@ -462,6 +530,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 finishTerminalWithNoNetwork()
             }
         } else {
+            isNetworkRestart = false
             binding.fab.setIconResource(R.drawable.ic_play_24dp)
             binding.fab.text = getString(R.string.btn_connect)
             binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_inactive))
@@ -553,9 +622,13 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private var terminalBuffer = StringBuilder()
+    private var pendingTerminalResult: Pair<String, Int>? = null
+    private var terminalStartTime = 0L
 
     private fun startTerminal(isConnecting: Boolean) {
         terminalJob?.cancel()
+        pendingTerminalResult = null
+        terminalStartTime = System.currentTimeMillis()
         val lines = resources.getStringArray(
             if (isConnecting) R.array.terminal_connecting else R.array.terminal_disconnecting
         )
@@ -565,19 +638,94 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.cardTerminal.visibility = View.VISIBLE
 
         terminalJob = lifecycleScope.launch {
-            for (line in lines) {
+            for ((index, line) in lines.withIndex()) {
+                // If real result arrived, fast-forward remaining lines
+                if (pendingTerminalResult != null) {
+                    for (remaining in index until lines.size) {
+                        terminalBuffer.append(lines[remaining]).append("\n")
+                    }
+                    binding.tvTerminal.text = terminalBuffer.toString()
+                    delay(150L)
+                    showTerminalResult(pendingTerminalResult!!)
+                    return@launch
+                }
+
+                // Type each character
                 for (ch in line) {
                     terminalBuffer.append(ch)
                     binding.tvTerminal.text = terminalBuffer.toString() + "█"
-                    delay(if (ch == '…' || ch == '—') 60L else 18L)
+                    delay(if (ch == '…' || ch == '—') 50L else 15L)
                 }
                 terminalBuffer.append("\n")
                 binding.tvTerminal.text = terminalBuffer.toString()
-                delay(350L)
+                delay(250L)
             }
-            // Decorative lines done — show blinking cursor while waiting for real result
+
+            // All decorative lines done — check if result is already waiting
+            if (pendingTerminalResult != null) {
+                showTerminalResult(pendingTerminalResult!!)
+                return@launch
+            }
+
+            // Show slow connection warning after 8s
+            var slowShown = false
             var blink = true
             while (true) {
+                if (!slowShown && System.currentTimeMillis() - terminalStartTime > 8000L) {
+                    slowShown = true
+                    val slowMsg = getString(R.string.terminal_slow_connection)
+                    terminalBuffer.append(slowMsg).append("\n")
+                    binding.tvTerminal.setTextColor(0xFFFFAB00.toInt()) // amber
+                }
+                // Check for pending result each blink cycle
+                if (pendingTerminalResult != null) {
+                    showTerminalResult(pendingTerminalResult!!)
+                    return@launch
+                }
+                binding.tvTerminal.text = terminalBuffer.toString() + if (blink) "█" else " "
+                blink = !blink
+                delay(500L)
+            }
+        }
+    }
+
+    private fun startTerminalNetworkSwitch() {
+        terminalJob?.cancel()
+        pendingTerminalResult = null
+        terminalStartTime = System.currentTimeMillis()
+        val lines = resources.getStringArray(R.array.terminal_network_switch)
+        terminalBuffer = StringBuilder()
+        binding.tvTerminal.text = ""
+        binding.tvTerminal.setTextColor(0xFFFFAB00.toInt()) // amber
+        binding.cardTerminal.visibility = View.VISIBLE
+
+        terminalJob = lifecycleScope.launch {
+            for ((index, line) in lines.withIndex()) {
+                if (pendingTerminalResult != null) {
+                    for (remaining in index until lines.size) {
+                        terminalBuffer.append(lines[remaining]).append("\n")
+                    }
+                    binding.tvTerminal.text = terminalBuffer.toString()
+                    delay(150L)
+                    showTerminalResult(pendingTerminalResult!!)
+                    return@launch
+                }
+                for (ch in line) {
+                    terminalBuffer.append(ch)
+                    binding.tvTerminal.text = terminalBuffer.toString() + "█"
+                    delay(if (ch == '…' || ch == '—') 50L else 15L)
+                }
+                terminalBuffer.append("\n")
+                binding.tvTerminal.text = terminalBuffer.toString()
+                delay(250L)
+            }
+            // Wait for result
+            var blink = true
+            while (true) {
+                if (pendingTerminalResult != null) {
+                    showTerminalResult(pendingTerminalResult!!)
+                    return@launch
+                }
                 binding.tvTerminal.text = terminalBuffer.toString() + if (blink) "█" else " "
                 blink = !blink
                 delay(500L)
@@ -586,69 +734,78 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun finishTerminalWithResult(resultText: String, color: Int) {
-        // Only show result if terminal was active (has buffered content)
         if (binding.cardTerminal.visibility != View.VISIBLE && terminalBuffer.isEmpty()) return
 
-        terminalJob?.cancel()
-        binding.cardTerminal.visibility = View.VISIBLE
+        // Store the result — the running terminal coroutine will pick it up
+        pendingTerminalResult = Pair(resultText, color)
 
-        terminalJob = lifecycleScope.launch {
-            // Type the real result line
-            for (ch in resultText) {
-                terminalBuffer.append(ch)
-                binding.tvTerminal.text = terminalBuffer.toString() + "█"
-                delay(if (ch == '…' || ch == '—') 60L else 22L)
+        // If terminal job already finished (or was never started), show immediately
+        if (terminalJob?.isActive != true) {
+            binding.cardTerminal.visibility = View.VISIBLE
+            terminalJob = lifecycleScope.launch {
+                showTerminalResult(Pair(resultText, color))
             }
-            terminalBuffer.append("\n")
-            binding.tvTerminal.text = terminalBuffer.toString()
-
-            // Show result briefly then fade
-            delay(3500L)
-            hideTerminal()
         }
+    }
+
+    private suspend fun showTerminalResult(result: Pair<String, Int>) {
+        pendingTerminalResult = null
+        val (text, color) = result
+        binding.tvTerminal.setTextColor(color)
+
+        // Type the result line quickly
+        for (ch in text) {
+            terminalBuffer.append(ch)
+            binding.tvTerminal.text = terminalBuffer.toString() + "█"
+            delay(12L)
+        }
+        terminalBuffer.append("\n")
+        binding.tvTerminal.text = terminalBuffer.toString()
+
+        delay(3000L)
+        hideTerminal()
     }
 
     private fun finishTerminalWithNoNetwork() {
         if (binding.cardTerminal.visibility != View.VISIBLE && terminalBuffer.isEmpty()) {
-            // No terminal was active — just show the no-network warning standalone
             startTerminalNoNetworkStandalone()
             return
         }
+        pendingTerminalResult = null
         terminalJob?.cancel()
         binding.cardTerminal.visibility = View.VISIBLE
         val resultLine = getString(R.string.terminal_result_no_network)
         val warningLines = resources.getStringArray(R.array.terminal_no_network)
 
         terminalJob = lifecycleScope.launch {
-            // Type the result line in red
             binding.tvTerminal.setTextColor(0xFFE53E6B.toInt())
             for (ch in resultLine) {
                 terminalBuffer.append(ch)
                 binding.tvTerminal.text = terminalBuffer.toString() + "█"
-                delay(if (ch == '…' || ch == '—') 60L else 22L)
+                delay(12L)
             }
             terminalBuffer.append("\n")
             binding.tvTerminal.text = terminalBuffer.toString()
-            delay(400L)
+            delay(300L)
 
-            // Type the warning lines
             for (line in warningLines) {
                 for (ch in line) {
                     terminalBuffer.append(ch)
                     binding.tvTerminal.text = terminalBuffer.toString() + "█"
-                    delay(if (ch == '…' || ch == '—') 60L else 18L)
+                    delay(15L)
                 }
                 terminalBuffer.append("\n")
                 binding.tvTerminal.text = terminalBuffer.toString()
-                delay(350L)
+                delay(250L)
             }
-            delay(5000L)
+            delay(4000L)
             hideTerminal()
         }
     }
 
     private fun startTerminalNoNetworkStandalone() {
         terminalJob?.cancel()
+        pendingTerminalResult = null
         val lines = resources.getStringArray(R.array.terminal_no_network)
         terminalBuffer = StringBuilder()
         binding.tvTerminal.text = ""
@@ -660,13 +817,13 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 for (ch in line) {
                     terminalBuffer.append(ch)
                     binding.tvTerminal.text = terminalBuffer.toString() + "█"
-                    delay(if (ch == '…' || ch == '—') 60L else 18L)
+                    delay(15L)
                 }
                 terminalBuffer.append("\n")
                 binding.tvTerminal.text = terminalBuffer.toString()
-                delay(350L)
+                delay(250L)
             }
-            delay(5000L)
+            delay(4000L)
             hideTerminal()
         }
     }
@@ -980,6 +1137,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     override fun onDestroy() {
         unregisterNetworkCallback()
         stopConnectingAnimation()
+        restartJob?.cancel()
         terminalJob?.cancel()
         tabMediator?.detach()
         super.onDestroy()

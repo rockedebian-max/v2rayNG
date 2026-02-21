@@ -485,6 +485,21 @@
     <string name="terminal_result_connected">[✓] Conexión establecida — túnel activo</string>
     <string name="terminal_result_no_network">[!] Túnel activo — sin acceso a red</string>
     <string name="terminal_result_disconnected">[✓] Desconectado — tráfico directo</string>
+    <string name="terminal_result_network_back">[✓] Red restaurada — túnel activo</string>
+
+    <!-- Terminal network switch reconnect messages -->
+    <string-array name="terminal_network_switch">
+        <item>[~] Cambio de red detectado…</item>
+        <item>[~] Reconectando túnel seguro…</item>
+        <item>[+] Reestableciendo canal encriptado…</item>
+    </string-array>
+
+    <!-- Network change UI strings -->
+    <string name="toolbar_subtitle_reconnecting">[ RECONECTANDO… ]</string>
+    <string name="connection_network_lost">Red perdida — esperando conexión…</string>
+    <string name="connection_reconnecting">Cambio de red — reconectando…</string>
+    <string name="notification_reconnecting">Reconectando túnel…</string>
+    <string name="terminal_slow_connection">[…] Red lenta — esto puede tardar un poco…</string>
 
     <!-- Manual de Uso -->
     <string name="title_user_manual">Manual de uso</string>

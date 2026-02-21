@@ -185,12 +185,10 @@ object V2RayServiceManager {
         val service = getService() ?: return false
 
         if (coreController.isRunning) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    coreController.stopLoop()
-                } catch (e: Exception) {
-                    Log.e(AppConfig.TAG, "Failed to stop V2Ray loop", e)
-                }
+            try {
+                coreController.stopLoop()
+            } catch (e: Exception) {
+                Log.e(AppConfig.TAG, "Failed to stop V2Ray loop", e)
             }
         }
 
@@ -347,8 +345,10 @@ object V2RayServiceManager {
                 AppConfig.MSG_STATE_RESTART -> {
                     Log.i(AppConfig.TAG, "Restart Service")
                     serviceControl.stopService()
-                    Thread.sleep(500L)
-                    startVService(serviceControl.getService())
+                    CoroutineScope(Dispatchers.Main).launch {
+                        kotlinx.coroutines.delay(500L)
+                        startVService(serviceControl.getService())
+                    }
                 }
 
                 AppConfig.MSG_MEASURE_DELAY -> {

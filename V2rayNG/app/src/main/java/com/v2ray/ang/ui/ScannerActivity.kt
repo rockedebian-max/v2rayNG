@@ -10,7 +10,6 @@ import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.databinding.ActivityNoneBinding
 import com.v2ray.ang.extension.toast
-import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.util.QRCodeDecoder
 import io.github.g00fy2.quickie.QRResult
 import io.github.g00fy2.quickie.ScanCustomCode
@@ -27,9 +26,8 @@ class ScannerActivity : HelperBaseActivity() {
 
         setContentViewWithToolbar(binding.root, showHomeAsUp = true, title = getString(R.string.menu_item_import_config_qrcode))
 
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_START_SCAN_IMMEDIATE)) {
-            launchScan()
-        }
+        // Always launch camera immediately — user already chose "Import QR"
+        launchScan()
     }
 
     private fun launchScan() {
