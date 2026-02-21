@@ -29,22 +29,57 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Expiration selector -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
+        <!-- Expiration: checkbox + amount + unit -->
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/cb_no_expiration"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="@string/admin_hint_expiration"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+            android:text="@string/admin_expiration_no_expire"
+            android:textSize="14sp" />
 
-            <AutoCompleteTextView
-                android:id="@+id/spinner_expiration"
-                android:layout_width="match_parent"
+        <LinearLayout
+            android:id="@+id/layout_expiration_fields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:inputType="none"
-                android:textSize="14sp" />
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:hint="@string/admin_hint_amount"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_expiration_amount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textSize="16sp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:hint="@string/admin_hint_unit"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/spinner_expiration_unit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:textSize="14sp" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
 
         <!-- Config link(s) input -->
         <com.google.android.material.textfield.TextInputLayout

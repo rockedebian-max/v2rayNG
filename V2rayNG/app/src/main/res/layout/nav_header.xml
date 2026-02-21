@@ -39,41 +39,60 @@
         android:fontFamily="sans-serif-light"
         android:textAllCaps="true" />
 
-    <!-- Device ID row -->
+    <!-- Device ID card — tap to copy -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:id="@+id/device_id_card"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_device_id_card"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
 
-        <TextView
-            android:id="@+id/tv_device_id_label"
-            android:layout_width="wrap_content"
+        <!-- Left: label + ID stacked -->
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/device_id_label"
-            android:textSize="10sp"
-            android:textColor="#5A6B7A"
-            android:fontFamily="monospace"
-            android:textAllCaps="true" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tv_device_id"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:textSize="11sp"
-            android:textColor="#00B4FF"
-            android:fontFamily="monospace" />
+            <TextView
+                android:id="@+id/tv_device_id_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/device_id_label"
+                android:textSize="10sp"
+                android:textColor="#5A6B7A"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.15"
+                android:textAllCaps="true" />
 
+            <TextView
+                android:id="@+id/tv_device_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="15sp"
+                android:textColor="#00B4FF"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.08" />
+
+        </LinearLayout>
+
+        <!-- Right: copy icon -->
         <ImageView
             android:id="@+id/btn_copy_device_id"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_marginStart="6dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
             android:src="@drawable/ic_copy"
             android:contentDescription="@string/device_id_copy_description"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:tint="#5A6B7A" />
 
     </LinearLayout>
 

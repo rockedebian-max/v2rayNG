@@ -1,8 +1,8 @@
 package com.v2ray.ang.ui
 
 import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
+import android.animation.ValueAnimator
+import android.graphics.Color
 import android.content.Intent
 import android.content.res.ColorStateList
 import androidx.appcompat.app.AlertDialog
@@ -49,7 +49,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.text.InputType
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -80,6 +79,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private var lastNetworkRestartTime = 0L
     private var hadNetworkBefore = true
     private var isNetworkRestart = false
+    private var isConnecting = false
     private var adminTapCount = 0
     private var adminTapJob: Job? = null
 
@@ -211,6 +211,14 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun handleFabAction() {
+        // Cancel during connecting — user changed their mind
+        if (isConnecting) {
+            isConnecting = false
+            V2RayServiceManager.stopVService(this)
+            applyRunningState(isLoading = false, isRunning = false)
+            return
+        }
+
         if (mainViewModel.isRunning.value == true) {
             // Cancel any pending restart (network switch, settings change, etc.)
             restartJob?.cancel()
@@ -321,6 +329,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             applyRunningState(isLoading = true, isRunning = false)
         } else {
             // Just show loading indicators without replacing the network switch terminal
+            isConnecting = false
             binding.fab.isClickable = false
             binding.progressBar.visibility = View.VISIBLE
             binding.progressConnecting.visibility = View.VISIBLE
@@ -457,21 +466,17 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
         if (isLoading) {
             val wasRunning = mainViewModel.isRunning.value == true
-            binding.fab.isClickable = false
 
-            if (wasRunning) {
-                // Disconnecting state
-                binding.fab.setIconResource(R.drawable.ic_stop_24dp)
-                binding.fab.text = getString(R.string.btn_disconnecting)
-                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_connecting))
-                setTestState(getString(R.string.connection_disconnecting))
-            } else {
-                // Connecting state
-                binding.fab.setIconResource(R.drawable.ic_fab_check)
-                binding.fab.text = getString(R.string.btn_connecting)
-                binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_connecting))
-                setTestState(getString(R.string.connection_establishing))
-            }
+            // Both connecting and disconnecting show "Detener" — simple 2-state UX
+            isConnecting = !wasRunning
+            binding.fab.isClickable = true  // Always cancelable
+            binding.fab.setIconResource(R.drawable.ic_stop_24dp)
+            binding.fab.text = getString(R.string.btn_disconnect)
+            binding.fab.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.color_fab_connecting))
+            setTestState(
+                if (wasRunning) getString(R.string.connection_disconnecting)
+                else getString(R.string.connection_establishing)
+            )
 
             // Show visual indicators
             binding.progressBar.visibility = View.VISIBLE
@@ -481,6 +486,9 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             startTerminal(!wasRunning)
             return
         }
+
+        // No longer connecting
+        isConnecting = false
 
         // Hide loading indicators
         binding.fab.isClickable = true
@@ -575,39 +583,26 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun startConnectingAnimation() {
-        // Shrink FAB to icon-only during connecting for a cleaner look
-        binding.fab.shrink()
+        // Visible animated border — pulses between white and transparent
+        val strokePx = (2.5f * resources.displayMetrics.density).toInt()
+        binding.fab.strokeWidth = strokePx
 
-        // Subtle pulse animation — no big scaling, no heavy opacity
-        val pulseUp = ObjectAnimator.ofPropertyValuesHolder(
-            binding.fab,
-            PropertyValuesHolder.ofFloat("scaleX", 1f, 1.04f),
-            PropertyValuesHolder.ofFloat("scaleY", 1f, 1.04f),
-            PropertyValuesHolder.ofFloat("alpha", 1f, 0.85f)
-        ).apply {
-            duration = 700
+        // Stroke fades in/out: white → semi-transparent → white (breathing effect)
+        val strokeAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1200
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
             interpolator = AccelerateDecelerateInterpolator()
-        }
-
-        val pulseDown = ObjectAnimator.ofPropertyValuesHolder(
-            binding.fab,
-            PropertyValuesHolder.ofFloat("scaleX", 1.04f, 1f),
-            PropertyValuesHolder.ofFloat("scaleY", 1.04f, 1f),
-            PropertyValuesHolder.ofFloat("alpha", 0.85f, 1f)
-        ).apply {
-            duration = 700
-            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { anim ->
+                val fraction = anim.animatedValue as Float
+                val alpha = (100 + (155 * fraction)).toInt() // 100..255
+                val color = Color.argb(alpha, 255, 255, 255)
+                binding.fab.strokeColor = ColorStateList.valueOf(color)
+            }
         }
 
         connectingAnimator = AnimatorSet().apply {
-            playSequentially(pulseUp, pulseDown)
-            addListener(object : android.animation.AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: android.animation.Animator) {
-                    if (connectingAnimator != null) {
-                        start()
-                    }
-                }
-            })
+            play(strokeAnimator)
             start()
         }
     }
@@ -618,7 +613,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.fab.scaleX = 1f
         binding.fab.scaleY = 1f
         binding.fab.alpha = 1f
-        binding.fab.extend() // Restore FAB to full size with text
+        binding.fab.strokeWidth = 0
     }
 
     private var terminalBuffer = StringBuilder()
@@ -846,12 +841,13 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private fun setupNavHeaderDeviceId() {
         val headerView = binding.navView.getHeaderView(0)
         val tvDeviceId = headerView.findViewById<TextView>(R.id.tv_device_id)
-        val btnCopy = headerView.findViewById<ImageView>(R.id.btn_copy_device_id)
+        val card = headerView.findViewById<View>(R.id.device_id_card)
 
         val displayId = DeviceManager.getDisplayDeviceId(this)
         tvDeviceId.text = displayId
 
-        btnCopy.setOnClickListener {
+        // Whole card is tappable to copy
+        card.setOnClickListener {
             val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("device_id", displayId))
             toast(R.string.device_id_copied)

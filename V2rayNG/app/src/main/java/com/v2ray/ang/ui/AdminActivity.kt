@@ -1,6 +1,5 @@
 package com.v2ray.ang.ui
 
-import android.app.DatePickerDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -17,34 +16,25 @@ import com.v2ray.ang.R
 import com.v2ray.ang.databinding.ActivityAdminBinding
 import com.v2ray.ang.util.DeviceLockCrypto
 import org.json.JSONObject
-import java.util.Calendar
 
 class AdminActivity : HelperBaseActivity() {
     private val binding by lazy { ActivityAdminBinding.inflate(layoutInflater) }
 
-    private data class ExpirationOption(val label: String, val days: Int)
-
-    private val expirationOptions by lazy {
-        listOf(
-            ExpirationOption(getString(R.string.admin_expiration_none), 0),
-            ExpirationOption(getString(R.string.admin_expiration_7d), 7),
-            ExpirationOption(getString(R.string.admin_expiration_15d), 15),
-            ExpirationOption(getString(R.string.admin_expiration_30d), 30),
-            ExpirationOption(getString(R.string.admin_expiration_60d), 60),
-            ExpirationOption(getString(R.string.admin_expiration_90d), 90),
-            ExpirationOption(getString(R.string.admin_expiration_custom), -1),
-        )
+    private enum class TimeUnit(val labelResId: Int, val millis: Long) {
+        HOURS(R.string.admin_unit_hours, 3_600_000L),
+        DAYS(R.string.admin_unit_days, 86_400_000L),
+        WEEKS(R.string.admin_unit_weeks, 604_800_000L),
+        MONTHS(R.string.admin_unit_months, 2_592_000_000L) // 30 days
     }
 
-    private var selectedExpirationDays = 0
-    private var customExpirationMs = 0L
+    private var selectedUnit = TimeUnit.DAYS
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentViewWithToolbar(binding.root, showHomeAsUp = true,
             title = getString(R.string.admin_panel_title))
 
-        setupExpirationSpinner()
+        setupExpirationFields()
         binding.btnScanQr.setOnClickListener { scanQrForConfig() }
         binding.btnPasteClipboard.setOnClickListener { pasteFromClipboard() }
         binding.btnGenerate.setOnClickListener { generateLink() }
@@ -53,42 +43,39 @@ class AdminActivity : HelperBaseActivity() {
         binding.btnClear.setOnClickListener { clearFields() }
     }
 
-    private fun setupExpirationSpinner() {
-        val labels = expirationOptions.map { it.label }
+    private fun setupExpirationFields() {
+        // Unit spinner
+        val units = TimeUnit.values()
+        val labels = units.map { getString(it.labelResId) }
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, labels)
-        binding.spinnerExpiration.setAdapter(adapter)
-        binding.spinnerExpiration.setText(labels[0], false)
+        binding.spinnerExpirationUnit.setAdapter(adapter)
+        binding.spinnerExpirationUnit.setText(getString(TimeUnit.DAYS.labelResId), false)
 
-        binding.spinnerExpiration.setOnItemClickListener { _, _, position, _ ->
-            val option = expirationOptions[position]
-            if (option.days == -1) {
-                showDatePicker()
-            } else {
-                selectedExpirationDays = option.days
-                customExpirationMs = 0L
-            }
+        binding.spinnerExpirationUnit.setOnItemClickListener { _, _, position, _ ->
+            selectedUnit = units[position]
+        }
+
+        // Default amount
+        binding.etExpirationAmount.setText("30")
+
+        // Checkbox: sin expiración
+        binding.cbNoExpiration.setOnCheckedChangeListener { _, isChecked ->
+            binding.layoutExpirationFields.alpha = if (isChecked) 0.4f else 1f
+            binding.etExpirationAmount.isEnabled = !isChecked
+            binding.spinnerExpirationUnit.isEnabled = !isChecked
         }
     }
 
-    private fun showDatePicker() {
-        val cal = Calendar.getInstance()
-        DatePickerDialog(this, { _, year, month, day ->
-            val selected = Calendar.getInstance().apply {
-                set(year, month, day, 23, 59, 59)
-            }
-            customExpirationMs = selected.timeInMillis
-            selectedExpirationDays = -1
-            val label = "%02d/%02d/%04d".format(day, month + 1, year)
-            binding.spinnerExpiration.setText(label, false)
-        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).apply {
-            datePicker.minDate = System.currentTimeMillis()
-        }.show()
-    }
-
     private fun calculateExpirationMs(): Long {
-        if (customExpirationMs > 0) return customExpirationMs
-        if (selectedExpirationDays <= 0) return 0L
-        return System.currentTimeMillis() + (selectedExpirationDays.toLong() * 86_400_000L)
+        if (binding.cbNoExpiration.isChecked) return 0L
+
+        val amount = binding.etExpirationAmount.text.toString().toLongOrNull()
+        if (amount == null || amount <= 0) {
+            Toast.makeText(this, R.string.admin_error_invalid_amount, Toast.LENGTH_SHORT).show()
+            return -1L // signal invalid
+        }
+
+        return System.currentTimeMillis() + (amount * selectedUnit.millis)
     }
 
     private fun scanQrForConfig() {
@@ -136,6 +123,8 @@ class AdminActivity : HelperBaseActivity() {
         }
 
         val expiresMs = calculateExpirationMs()
+        if (expiresMs == -1L) return // validation failed
+
         val lines = configText.lines().map { it.trim() }.filter { it.isNotEmpty() }
         val generatedLinks = mutableListOf<String>()
 
@@ -213,9 +202,10 @@ class AdminActivity : HelperBaseActivity() {
     private fun clearFields() {
         binding.etConfigLink.setText("")
         binding.etTargetDeviceId.setText("")
-        binding.spinnerExpiration.setText(expirationOptions[0].label, false)
-        selectedExpirationDays = 0
-        customExpirationMs = 0L
+        binding.cbNoExpiration.isChecked = false
+        binding.etExpirationAmount.setText("30")
+        binding.spinnerExpirationUnit.setText(getString(TimeUnit.DAYS.labelResId), false)
+        selectedUnit = TimeUnit.DAYS
         binding.tvGeneratedLink.text = ""
         binding.layoutResult.visibility = View.GONE
     }
