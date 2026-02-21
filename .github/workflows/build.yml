@@ -91,4 +91,4 @@ jobs:
       if: ${{ success() }}
       with:
         name: v2rayNG-debug-apks
-        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/fdroid/debug/*.apk
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/fdroid/debug/*.apk.zip
