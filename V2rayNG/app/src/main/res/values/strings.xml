@@ -105,6 +105,7 @@
     <string name="toast_malformed_josn">Configuración con formato incorrecto</string>
     <string name="server_lab_request_host6">Host(SNI)(Optional)</string>
     <string name="toast_action_not_allowed">Acción no permitida</string>
+    <string name="toast_disconnect_before_delete">Desconecta la VPN antes de eliminar este servidor</string>
     <string name="server_obfs_password">Obfs password</string>
     <string name="server_lab_port_hop">Port Hopping(will override the port)</string>
     <string name="server_lab_port_hop_interval">Port Hopping Interval</string>
@@ -339,7 +340,7 @@
     <string name="connection_test_error">Error de conexión: %s</string>
     <string name="connection_test_fail">Internet no disponible</string>
     <string name="connection_test_error_status_code">Código de error: #%d</string>
-    <string name="connection_connected">Conectado — toca para verificar</string>
+    <string name="connection_connected">Conectado</string>
     <string name="connection_connected_no_network">Túnel activo — sin acceso a red</string>
     <string name="notification_no_network">Sin conexión a internet — verifica tu red</string>
     <string name="connection_not_connected">Sin conexión</string>
@@ -480,18 +481,20 @@
 
     <!-- Manual de Uso -->
     <string name="title_user_manual">Manual de uso</string>
-    <string name="manual_section1_title">1. Importar servidores</string>
-    <string name="manual_section1_body">Toca el botón + en la barra superior para agregar servidores. Puedes importar de tres formas:\n\n• Escanear QR: Apunta la cámara al código QR del servidor.\n• Portapapeles: Copia el enlace del servidor y toca \"Importar desde portapapeles\".\n• Archivo local: Selecciona un archivo de configuración desde tu dispositivo.\n\nSin servidores, la app no puede conectarse.</string>
+    <string name="manual_section1_title">1. Agregar tu servidor</string>
+    <string name="manual_section1_body">Lo primero es agregar el servidor que te dieron. Toca el botón + arriba a la derecha y elige una opción:\n\n• Escanear QR: Si te dieron un código QR, apunta la cámara y listo.\n• Portapapeles: Si te enviaron un enlace por WhatsApp o mensaje, cópialo y toca esta opción.\n• Archivo: Si te dieron un archivo, selecciónalo desde tu celular.\n\nSin un servidor agregado, la app no podrá conectarse.</string>
     <string name="manual_section2_title">2. Probar servidores</string>
-    <string name="manual_section2_body">IMPORTANTE: Antes de seleccionar un servidor, toca el botón \"Probar servidores\" en la parte superior de la lista.\n\nEsto mide el tiempo de respuesta (ping) de cada servidor. Espera a que termine la prueba — verás los resultados junto a cada servidor:\n\n• Verde: Excelente conexión\n• Amarillo: Conexión aceptable\n• Rojo: Conexión lenta\n• Sin resultado: Servidor no disponible\n\nLos servidores se ordenan automáticamente del mejor al peor.</string>
-    <string name="manual_section3_title">3. Seleccionar servidor</string>
-    <string name="manual_section3_body">Después de probar, toca el servidor con mejor resultado (el de arriba si ya se ordenaron). El servidor seleccionado se resaltará.\n\nSi un servidor no funciona, prueba con otro de la lista.</string>
+    <string name="manual_section2_body">Antes de conectarte, toca el botón \"Probar servidores\" arriba de la lista. Esto verifica cuáles funcionan bien.\n\nEspera unos segundos y verás un resultado de color junto a cada servidor:\n\n• Verde: Funciona muy bien\n• Amarillo: Funciona pero puede ir lento\n• Rojo: Funciona pero va lento\n• Sin resultado: No funciona\n\nLos servidores se ordenan solos — el mejor queda arriba.</string>
+    <string name="manual_section3_title">3. Elegir servidor</string>
+    <string name="manual_section3_body">Toca el servidor que tenga el mejor resultado (normalmente el primero de la lista). Se marcará con un borde azul.\n\nSi no te funciona bien, prueba tocando otro de la lista.</string>
     <string name="manual_section4_title">4. Conectar</string>
-    <string name="manual_section4_body">Toca el botón \"Conectar\" (abajo a la derecha). La app mostrará una animación de terminal mientras establece la conexión.\n\nEstados del botón:\n• Conectar (gris): Listo para conectar\n• Conectando… (azul pulsante): Estableciendo túnel\n• Detener (azul): Conectado y funcionando\n• Detener (ámbar): Túnel activo pero sin internet — verifica tu WiFi o datos móviles</string>
-    <string name="manual_section5_title">5. Barra inferior</string>
-    <string name="manual_section5_body">La barra inferior muestra el estado de la conexión en tiempo real:\n\n• \"Sin conexión\": No estás conectado\n• \"Estableciendo conexión segura…\": Conectando\n• \"Conectado — toca para verificar\": Toca la barra para hacer una prueba de velocidad\n• \"Túnel activo — sin acceso a red\": El VPN funciona pero no tienes internet\n• \"Conexión exitosa: Xms\": Todo funciona, X es el tiempo de respuesta</string>
-    <string name="manual_section6_title">6. Ubicación IP</string>
-    <string name="manual_section6_body">En el menú lateral encontrarás \"Ubicación IP\". Esto te muestra la dirección IP que ven los sitios web cuando navegas con el VPN activo.\n\nSi la IP muestra otro país, tu tráfico está siendo enrutado correctamente por el servidor VPN.</string>
+    <string name="manual_section4_body">Toca el botón grande \"Conectar\" abajo a la derecha.\n\nVerás una animación mientras se conecta. Cuando el botón cambie a \"Detener\" en color azul, ya estás protegido.\n\nColores del botón:\n• Gris: Desconectado, listo para conectar\n• Azul pulsante: Conectando, espera unos segundos\n• Azul: Conectado y funcionando\n• Rojo: Conectado pero sin internet — revisa tu WiFi o datos</string>
+    <string name="manual_section5_title">5. Estado de la conexión</string>
+    <string name="manual_section5_body">En la parte de abajo verás mensajes sobre tu conexión:\n\n• \"Sin conexión\": No estás conectado al VPN\n• \"Probando…\": Verificando que todo funcione (se hace automáticamente)\n• \"Conexión exitosa\": Todo funciona correctamente\n• \"Sin acceso a red\": El VPN está activo pero no tienes internet — revisa tu WiFi o datos\n\nPuedes tocar esta zona en cualquier momento para verificar de nuevo tu conexión.</string>
+    <string name="manual_section6_title">6. Eliminar un servidor</string>
+    <string name="manual_section6_body">Para eliminar un servidor, mantén presionado sobre él y elige \"Eliminar\".\n\nSi estás conectado al VPN, primero toca \"Detener\" para desconectarte y luego podrás eliminarlo.</string>
+    <string name="manual_section7_title">7. Ver tu ubicación</string>
+    <string name="manual_section7_body">Abre el menú lateral (las 3 líneas arriba a la izquierda ☰) y toca \"Rastrear mi ubicación IP\".\n\nAhí verás desde qué país te ven los sitios web. Si muestra otro país diferente al tuyo, significa que el VPN está funcionando correctamente y tu conexión está protegida.</string>
     <string-array name="terminal_disconnecting">
         <item>$ cyberguard --disconnect</item>
         <item>[+] Cerrando túnel encriptado…</item>

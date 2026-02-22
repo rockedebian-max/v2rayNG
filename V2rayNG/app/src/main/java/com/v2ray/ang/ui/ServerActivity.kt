@@ -24,8 +24,6 @@ import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.NetworkType
 import com.v2ray.ang.dto.ProfileItem
 import com.v2ray.ang.extension.isNotNullEmpty
-import com.v2ray.ang.extension.toast
-import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.util.JsonUtil
@@ -447,16 +445,16 @@ class ServerActivity : BaseActivity() {
      */
     private fun saveServer(): Boolean {
         if (TextUtils.isEmpty(et_remarks.text.toString())) {
-            toast(R.string.server_lab_remarks)
+            snackError(R.string.server_lab_remarks)
             return false
         }
         if (TextUtils.isEmpty(et_address.text.toString())) {
-            toast(R.string.server_lab_address)
+            snackError(R.string.server_lab_address)
             return false
         }
         if (createConfigType != EConfigType.HYSTERIA2) {
             if (Utils.parseInt(et_port.text.toString()) <= 0) {
-                toast(R.string.server_lab_port)
+                snackError(R.string.server_lab_port)
                 return false
             }
         }
@@ -470,21 +468,21 @@ class ServerActivity : BaseActivity() {
                 || config.configType == EConfigType.SHADOWSOCKS
                 || config.configType == EConfigType.HYSTERIA2
             ) {
-                toast(R.string.server_lab_id3)
+                snackError(R.string.server_lab_id3)
             } else {
-                toast(R.string.server_lab_id)
+                snackError(R.string.server_lab_id)
             }
             return false
         }
         sp_stream_security?.let {
             if (config.configType == EConfigType.TROJAN && TextUtils.isEmpty(streamSecuritys[it.selectedItemPosition])) {
-                toast(R.string.server_lab_stream_security)
+                snackError(R.string.server_lab_stream_security)
                 return false
             }
         }
         if (et_extra?.text?.toString().isNotNullEmpty()) {
             if (JsonUtil.parseString(et_extra?.text?.toString()) == null) {
-                toast(R.string.server_lab_xhttp_extra)
+                snackError(R.string.server_lab_xhttp_extra)
                 return false
             }
         }
@@ -500,7 +498,7 @@ class ServerActivity : BaseActivity() {
         }
         //Log.i(AppConfig.TAG, JsonUtil.toJsonPretty(config) ?: "")
         MmkvManager.encodeServerConfig(editGuid, config)
-        toastSuccess(R.string.toast_success)
+        snackSuccess(R.string.toast_success)
         finish()
         return true
     }
@@ -626,7 +624,7 @@ class ServerActivity : BaseActivity() {
         if (editGuid.isNotEmpty()) {
             // Block deletion of active server while VPN is running
             if (editGuid == MmkvManager.getSelectServer() && isRunning) {
-                toast(R.string.toast_action_not_allowed)
+                snackError(R.string.toast_disconnect_before_delete)
                 return true
             }
             if (MmkvManager.decodeSettingsBool(AppConfig.PREF_CONFIRM_REMOVE, true)) {

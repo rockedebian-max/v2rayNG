@@ -19,8 +19,6 @@ import com.v2ray.ang.databinding.ItemQrcodeBinding
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.dto.ProfileItem
 import com.v2ray.ang.extension.toast
-import com.v2ray.ang.extension.toastError
-import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.helper.SimpleItemTouchHelperCallback
@@ -139,9 +137,9 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
      */
     private fun share2Clipboard(guid: String) {
         if (AngConfigManager.share2Clipboard(ownerActivity, guid) == 0) {
-            ownerActivity.toastSuccess(R.string.toast_success)
+            ownerActivity.snackSuccess(R.string.toast_success)
         } else {
-            ownerActivity.toastError(R.string.toast_failure)
+            ownerActivity.snackError(R.string.toast_failure)
         }
     }
 
@@ -154,9 +152,9 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
             val result = AngConfigManager.shareFullContent2Clipboard(ownerActivity, guid)
             launch(Dispatchers.Main) {
                 if (result == 0) {
-                    ownerActivity.toastSuccess(R.string.toast_success)
+                    ownerActivity.snackSuccess(R.string.toast_success)
                 } else {
-                    ownerActivity.toastError(R.string.toast_failure)
+                    ownerActivity.snackError(R.string.toast_failure)
                 }
             }
         }
@@ -192,7 +190,7 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
     private fun removeServer(guid: String, position: Int) {
         // Block deletion of the active server while VPN is running
         if (guid == MmkvManager.getSelectServer() && mainViewModel.isRunning.value == true) {
-            ownerActivity.toast(R.string.toast_action_not_allowed)
+            ownerActivity.snackError(R.string.toast_disconnect_before_delete)
             return
         }
 
@@ -230,8 +228,8 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
      * @param position The position in the list
      */
     private fun removeServerSub(guid: String, position: Int) {
-        ownerActivity.mainViewModel.removeServer(guid)
         adapter.removeServerSub(guid, position)
+        ownerActivity.mainViewModel.removeServer(guid)
     }
 
     /**
@@ -249,7 +247,7 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
 
             if (mainViewModel.isRunning.value == true) {
                 // Fix #7: Show feedback when switching server while connected
-                ownerActivity.toast(R.string.toast_server_switching)
+                ownerActivity.snackInfo(R.string.toast_server_switching)
                 ownerActivity.restartV2Ray()
             }
         }

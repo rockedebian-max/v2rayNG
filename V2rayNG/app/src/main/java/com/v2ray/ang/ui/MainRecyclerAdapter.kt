@@ -63,9 +63,10 @@ class MainRecyclerAdapter(
             holder.itemMainBinding.tvName.text = profile.remarks
             holder.itemMainBinding.tvType.text = profile.configType.name
 
-            //TestResult - color-coded ping
+            //TestResult - color-coded ping with LED indicator
             val aff = MmkvManager.decodeServerAffiliationInfo(guid)
             val delayMs = aff?.testDelayMillis ?: 0L
+            val led = holder.itemMainBinding.viewPingLed
             if (delayMs > 0L) {
                 holder.itemMainBinding.tvTestResult.text = "${delayMs}ms"
                 val pingColor = when {
@@ -74,11 +75,16 @@ class MainRecyclerAdapter(
                     else -> R.color.colorPingRed
                 }
                 holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, pingColor))
+                led.backgroundTintList = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(context, pingColor))
+                led.visibility = View.VISIBLE
             } else if (delayMs < 0L) {
                 holder.itemMainBinding.tvTestResult.text = "Error"
                 holder.itemMainBinding.tvTestResult.setTextColor(ContextCompat.getColor(context, R.color.colorPingRed))
+                led.backgroundTintList = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorPingRed))
+                led.visibility = View.VISIBLE
             } else {
                 holder.itemMainBinding.tvTestResult.text = ""
+                led.visibility = View.GONE
             }
 
             // Card + indicator styling based on selection

@@ -2,11 +2,16 @@ package com.v2ray.ang.ui
 
 import android.content.Context
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -14,7 +19,10 @@ import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.snackbar.Snackbar
 import com.v2ray.ang.R
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.helper.CustomDividerItemDecoration
@@ -34,8 +42,7 @@ import com.v2ray.ang.util.Utils
  * - Wrap base context according to user locale settings.
  */
 abstract class BaseActivity : AppCompatActivity() {
-    // Progress indicator that sits at the bottom of the toolbar
-    private var progressBar: LinearProgressIndicator? = null
+    private var loadingDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,7 +129,6 @@ abstract class BaseActivity : AppCompatActivity() {
             supportActionBar?.setDisplayHomeAsUpEnabled(showHomeAsUp)
             title?.let { t -> this.title = t }
         }
-        progressBar = findViewById(R.id.progress_bar)
     }
 
     /**
@@ -140,7 +146,6 @@ abstract class BaseActivity : AppCompatActivity() {
         val base = LayoutInflater.from(this).inflate(R.layout.activity_base, null)
         val container = base.findViewById<FrameLayout>(R.id.content_container)
         LayoutInflater.from(this).inflate(layoutResId, container, true)
-        progressBar = base.findViewById(R.id.progress_bar)
         super.setContentView(base)
         setupToolbar(base, showHomeAsUp, title)
     }
@@ -160,7 +165,6 @@ abstract class BaseActivity : AppCompatActivity() {
         val base = LayoutInflater.from(this).inflate(R.layout.activity_base, null)
         val container = base.findViewById<FrameLayout>(R.id.content_container)
         container.addView(childView, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        progressBar = base.findViewById(R.id.progress_bar)
         super.setContentView(base)
         setupToolbar(base, showHomeAsUp, title)
     }
@@ -182,35 +186,96 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     /**
-     * Show the base layout's ProgressBar.
-     *
-     * This method is safe to call from background threads; the visibility change will
-     * be posted to the UI thread via [runOnUiThread]. If the base layout was not set yet
-     * (progressBar == null) the call is a no-op.
+     * Show a Material loading dialog with a circular spinner.
+     * Safe to call from background threads.
      */
     protected fun showLoading() {
         runOnUiThread {
-            progressBar?.visibility = View.VISIBLE
+            if (loadingDialog?.isShowing == true) return@runOnUiThread
+
+            val dp = { value: Int -> (value * resources.displayMetrics.density).toInt() }
+
+            val layout = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(24), dp(24), dp(24), dp(24))
+            }
+
+            val spinner = CircularProgressIndicator(this).apply {
+                isIndeterminate = true
+                indicatorSize = dp(40)
+                trackThickness = dp(4)
+            }
+            layout.addView(spinner, LinearLayout.LayoutParams(dp(40), dp(40)))
+
+            val label = TextView(this).apply {
+                setText(R.string.msg_dialog_progress)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                setPadding(dp(20), 0, 0, 0)
+                setTextColor(MaterialColors.getColor(this@BaseActivity, com.google.android.material.R.attr.colorOnSurface, 0))
+            }
+            layout.addView(label)
+
+            loadingDialog = MaterialAlertDialogBuilder(this)
+                .setView(layout)
+                .setCancelable(false)
+                .create()
+            loadingDialog?.show()
         }
     }
 
     /**
-     * Hide the base layout's ProgressBar.
-     *
-     * Safe to call from background threads. No-op if the progress bar hasn't been cached.
+     * Hide the loading dialog.
+     * Safe to call from background threads.
      */
     protected fun hideLoading() {
         runOnUiThread {
-            progressBar?.visibility = View.GONE
+            loadingDialog?.dismiss()
+            loadingDialog = null
         }
     }
 
     /**
-     * Returns true when the base ProgressBar is currently visible.
-     *
-     * @return true if the progress bar exists and its visibility is VISIBLE
+     * Show a themed info snackbar (neutral — uses primary color accent).
      */
-    protected fun isLoadingVisible(): Boolean {
-        return progressBar?.visibility == View.VISIBLE
+    fun snackInfo(message: Int) = showThemedSnackbar(getString(message), TYPE_INFO)
+    fun snackInfo(message: String) = showThemedSnackbar(message, TYPE_INFO)
+
+    /**
+     * Show a themed success snackbar (green accent).
+     */
+    fun snackSuccess(message: Int) = showThemedSnackbar(getString(message), TYPE_SUCCESS)
+    fun snackSuccess(message: String) = showThemedSnackbar(message, TYPE_SUCCESS)
+
+    /**
+     * Show a themed error/warning snackbar (red accent).
+     */
+    fun snackError(message: Int) = showThemedSnackbar(getString(message), TYPE_ERROR)
+    fun snackError(message: String) = showThemedSnackbar(message, TYPE_ERROR)
+
+    private fun showThemedSnackbar(message: String, type: Int) {
+        val rootView = findViewById<View>(android.R.id.content) ?: return
+        val snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG)
+        val snackView = snackbar.view
+
+        val bgColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceContainerHigh, 0)
+        snackView.setBackgroundColor(bgColor)
+
+        val textView = snackView.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+        textView.maxLines = 3
+        val accentColor = when (type) {
+            TYPE_SUCCESS -> ContextCompat.getColor(this, R.color.colorPingGreen)
+            TYPE_ERROR -> ContextCompat.getColor(this, R.color.colorPingRed)
+            else -> MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary, 0)
+        }
+        textView.setTextColor(accentColor)
+
+        snackbar.show()
+    }
+
+    companion object {
+        private const val TYPE_INFO = 0
+        private const val TYPE_SUCCESS = 1
+        private const val TYPE_ERROR = 2
     }
 }

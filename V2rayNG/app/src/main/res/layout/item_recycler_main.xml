@@ -109,6 +109,15 @@
             android:gravity="center_vertical|end"
             android:orientation="horizontal">
 
+            <!-- Ping LED indicator -->
+            <View
+                android:id="@+id/view_ping_led"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginEnd="6dp"
+                android:visibility="gone"
+                android:background="@drawable/ping_led" />
+
             <!-- Test result -->
             <TextView
                 android:id="@+id/tv_test_result"

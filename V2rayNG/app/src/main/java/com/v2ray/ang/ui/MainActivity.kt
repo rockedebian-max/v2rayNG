@@ -87,7 +87,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         } else {
             // User denied VPN permission — reset UI from "Connecting" back to idle
             applyRunningState(isLoading = false, isRunning = false)
-            toast(R.string.toast_vpn_permission_denied)
+            snackError(R.string.toast_vpn_permission_denied)
         }
     }
     private val requestActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -303,14 +303,13 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             setTestState(getString(R.string.connection_test_testing))
             mainViewModel.testCurrentServerRealPing()
         } else {
-            // Fix #4: Give feedback when tapping bottom bar while disconnected
-            toast(R.string.toast_tap_to_test_disconnected)
+            snackInfo(R.string.toast_tap_to_test_disconnected)
         }
     }
 
     private fun startV2Ray() {
         if (MmkvManager.getSelectServer().isNullOrEmpty()) {
-            toast(R.string.title_file_chooser)
+            snackInfo(R.string.title_file_chooser)
             return
         }
         V2RayServiceManager.startVService(this)
@@ -413,11 +412,13 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 hadNetworkBefore = true
                 lastNetworkRestartTime = now
                 startNetworkSwitchRestart()
-            } else {
-                // Network is fine, just update UI
+            } else if (!hadNetworkBefore) {
+                // Network restored but within cooldown — just update UI
                 hadNetworkBefore = true
                 applyRunningState(false, true)
+                scheduleAutoCheck()
             }
+            // else: network was already fine, no UI update needed
         }
     }
 
@@ -848,7 +849,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         card.setOnClickListener {
             val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("device_id", displayId))
-            toast(R.string.device_id_copied)
+            snackSuccess(R.string.device_id_copied)
         }
     }
 
@@ -916,7 +917,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private fun showTerminalCommandDialog() {
         // Check lockout before showing anything
         if (isAdminLocked()) {
-            toast(R.string.admin_locked_out)
+            snackError(R.string.admin_locked_out)
             return
         }
 
@@ -1338,18 +1339,18 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 withContext(Dispatchers.Main) {
                     when {
                         count > 0 -> {
-                            toast(getString(R.string.title_import_config_count, count))
+                            snackSuccess(getString(R.string.title_import_config_count, count))
                             mainViewModel.reloadServerList()
                         }
 
                         countSub > 0 -> setupGroupTab()
-                        else -> toastError(R.string.toast_failure)
+                        else -> snackError(R.string.toast_failure)
                     }
                     hideLoading()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    toastError(R.string.toast_failure)
+                    snackError(R.string.toast_failure)
                     hideLoading()
                 }
                 Log.e(AppConfig.TAG, "Failed to import batch config", e)
