@@ -21,6 +21,7 @@ class AdminActivity : HelperBaseActivity() {
     private val binding by lazy { ActivityAdminBinding.inflate(layoutInflater) }
 
     private enum class TimeUnit(val labelResId: Int, val millis: Long) {
+        MINUTES(R.string.admin_unit_minutes, 60_000L),
         HOURS(R.string.admin_unit_hours, 3_600_000L),
         DAYS(R.string.admin_unit_days, 86_400_000L),
         WEEKS(R.string.admin_unit_weeks, 604_800_000L),
@@ -34,6 +35,7 @@ class AdminActivity : HelperBaseActivity() {
         setContentViewWithToolbar(binding.root, showHomeAsUp = true,
             title = getString(R.string.admin_panel_title))
 
+        setupDeviceIdFields()
         setupExpirationFields()
         binding.btnScanQr.setOnClickListener { scanQrForConfig() }
         binding.btnPasteClipboard.setOnClickListener { pasteFromClipboard() }
@@ -41,6 +43,13 @@ class AdminActivity : HelperBaseActivity() {
         binding.btnShare.setOnClickListener { shareLink() }
         binding.btnCopyLink.setOnClickListener { copyLink() }
         binding.btnClear.setOnClickListener { clearFields() }
+    }
+
+    private fun setupDeviceIdFields() {
+        binding.cbNoDeviceId.setOnCheckedChangeListener { _, isChecked ->
+            binding.tilDeviceId.isEnabled = !isChecked
+            binding.tilDeviceId.alpha = if (isChecked) 0.35f else 1f
+        }
     }
 
     private fun setupExpirationFields() {
@@ -78,6 +87,18 @@ class AdminActivity : HelperBaseActivity() {
         return System.currentTimeMillis() + (amount * selectedUnit.millis)
     }
 
+    private fun getTargetDeviceId(): String? {
+        if (binding.cbNoDeviceId.isChecked) {
+            return DeviceLockCrypto.PUBLIC_KEY_ID
+        }
+        val targetId = binding.etTargetDeviceId.text.toString().trim().uppercase()
+        if (targetId.length != 14 || !targetId.matches(Regex("[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}"))) {
+            Toast.makeText(this, R.string.admin_error_invalid_device_id, Toast.LENGTH_SHORT).show()
+            return null
+        }
+        return targetId
+    }
+
     private fun scanQrForConfig() {
         launchQRCodeScanner { scanResult ->
             if (scanResult != null) {
@@ -111,16 +132,12 @@ class AdminActivity : HelperBaseActivity() {
 
     private fun generateLink() {
         val configText = binding.etConfigLink.text.toString().trim()
-        val targetId = binding.etTargetDeviceId.text.toString().trim().uppercase()
-
         if (configText.isBlank()) {
             Toast.makeText(this, R.string.admin_error_empty_config, Toast.LENGTH_SHORT).show()
             return
         }
-        if (targetId.length != 14 || !targetId.matches(Regex("[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}"))) {
-            Toast.makeText(this, R.string.admin_error_invalid_device_id, Toast.LENGTH_SHORT).show()
-            return
-        }
+
+        val targetId = getTargetDeviceId() ?: return
 
         val expiresMs = calculateExpirationMs()
         if (expiresMs == -1L) return // validation failed
@@ -169,16 +186,39 @@ class AdminActivity : HelperBaseActivity() {
     }
 
     private fun generateQrCode(content: String): Bitmap {
+        val size = 512
         val writer = QRCodeWriter()
-        val hints = mapOf(EncodeHintType.MARGIN to 1)
-        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, 512, 512, hints)
-        val bitmap = Bitmap.createBitmap(512, 512, Bitmap.Config.RGB_565)
-        for (x in 0 until 512) {
-            for (y in 0 until 512) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+        val hints = mapOf(EncodeHintType.MARGIN to 2)
+        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, size, size, hints)
+
+        val bgColor = 0xFF0A0E14.toInt()     // dark background
+        val fgColor = 0xFF00B4FF.toInt()      // cyan modules
+        val glowColor = 0xFF004466.toInt()    // subtle glow around modules
+
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+
+        // First pass: draw background and modules
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) fgColor else bgColor)
             }
         }
-        return bitmap
+
+        // Second pass: add subtle glow around cyan modules (1px border)
+        val glowBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        for (x in 1 until size - 1) {
+            for (y in 1 until size - 1) {
+                if (!bitMatrix[x, y]) {
+                    // Check if any neighbor is a module
+                    val hasNeighbor = bitMatrix[x - 1, y] || bitMatrix[x + 1, y] ||
+                            bitMatrix[x, y - 1] || bitMatrix[x, y + 1]
+                    if (hasNeighbor) {
+                        glowBitmap.setPixel(x, y, glowColor)
+                    }
+                }
+            }
+        }
+        return glowBitmap
     }
 
     private fun shareLink() {
@@ -202,6 +242,7 @@ class AdminActivity : HelperBaseActivity() {
     private fun clearFields() {
         binding.etConfigLink.setText("")
         binding.etTargetDeviceId.setText("")
+        binding.cbNoDeviceId.isChecked = false
         binding.cbNoExpiration.isChecked = false
         binding.etExpirationAmount.setText("30")
         binding.spinnerExpirationUnit.setText(getString(TimeUnit.DAYS.labelResId), false)

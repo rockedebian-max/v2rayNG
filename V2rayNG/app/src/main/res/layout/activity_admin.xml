@@ -3,149 +3,278 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="#0A0E14">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="14dp">
 
-        <!-- Device ID input -->
-        <com.google.android.material.textfield.TextInputLayout
+        <!-- ═══ SECTION: Target Device ═══ -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/admin_hint_device_id"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            app:cardBackgroundColor="#0F1620"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="#1A3A5C"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_target_device_id"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapCharacters|textNoSuggestions"
-                android:maxLength="14"
-                android:fontFamily="monospace"
-                android:textSize="16sp" />
+                android:orientation="vertical"
+                android:padding="14dp">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <!-- Section label -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/admin_section_target"
+                    android:textColor="#5A6B7A"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.15"
+                    android:textAllCaps="true"
+                    android:layout_marginBottom="10dp" />
 
-        <!-- Expiration: checkbox + amount + unit -->
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/cb_no_expiration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/admin_expiration_no_expire"
-            android:textSize="14sp" />
-
-        <LinearLayout
-            android:id="@+id/layout_expiration_fields"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:hint="@string/admin_hint_amount"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_expiration_amount"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_device_id"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:textSize="16sp" />
+                    android:hint="@string/admin_hint_device_id"
+                    app:boxStrokeColor="#00B4FF"
+                    app:hintTextColor="#5A6B7A"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_target_device_id"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapCharacters|textNoSuggestions"
+                        android:maxLength="14"
+                        android:fontFamily="monospace"
+                        android:textColor="#00B4FF"
+                        android:textSize="16sp" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:hint="@string/admin_hint_unit"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+                </com.google.android.material.textfield.TextInputLayout>
 
-                <AutoCompleteTextView
-                    android:id="@+id/spinner_expiration_unit"
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/cb_no_device_id"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:textSize="14sp" />
+                    android:layout_marginTop="8dp"
+                    android:text="@string/admin_no_device_id"
+                    android:textColor="#8A9BB0"
+                    android:textSize="13sp"
+                    app:thumbTint="#00B4FF"
+                    app:trackTintMode="src_in" />
 
-            </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
 
-        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <!-- Config link(s) input -->
-        <com.google.android.material.textfield.TextInputLayout
+        <!-- ═══ SECTION: Expiration ═══ -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="@string/admin_hint_config_link"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="#0F1620"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="#1A3A5C"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_config_link"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minLines="4"
-                android:maxLines="10"
-                android:gravity="top"
-                android:inputType="textMultiLine|textNoSuggestions"
-                android:fontFamily="monospace"
-                android:textSize="12sp" />
+                android:orientation="vertical"
+                android:padding="14dp">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/admin_section_expiration"
+                    android:textColor="#5A6B7A"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.15"
+                    android:textAllCaps="true"
+                    android:layout_marginBottom="10dp" />
 
-        <!-- Quick import buttons -->
-        <LinearLayout
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/cb_no_expiration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/admin_expiration_no_expire"
+                    android:textColor="#8A9BB0"
+                    android:textSize="13sp"
+                    app:thumbTint="#00B4FF"
+                    app:trackTintMode="src_in" />
+
+                <LinearLayout
+                    android:id="@+id/layout_expiration_fields"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:hint="@string/admin_hint_amount"
+                        app:boxStrokeColor="#00B4FF"
+                        app:hintTextColor="#5A6B7A"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_expiration_amount"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="number"
+                            android:textColor="#E0E0E0"
+                            android:textSize="16sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:hint="@string/admin_hint_unit"
+                        app:boxStrokeColor="#00B4FF"
+                        app:hintTextColor="#5A6B7A"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinner_expiration_unit"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="#E0E0E0"
+                            android:textSize="14sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ═══ SECTION: Config Links ═══ -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="#0F1620"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="#1A3A5C"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_scan_qr"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="6dp"
-                android:text="@string/admin_btn_scan_qr"
-                android:textAllCaps="false"
-                app:icon="@drawable/ic_scan_24dp"
-                app:iconGravity="start"
-                app:cornerRadius="12dp" />
+                android:orientation="vertical"
+                android:padding="14dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_paste_clipboard"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="6dp"
-                android:text="@string/admin_btn_paste"
-                android:textAllCaps="false"
-                app:icon="@drawable/ic_paste_24dp"
-                app:iconGravity="start"
-                app:cornerRadius="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/admin_section_config"
+                    android:textColor="#5A6B7A"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.15"
+                    android:textAllCaps="true"
+                    android:layout_marginBottom="10dp" />
 
-        </LinearLayout>
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/admin_hint_config_link"
+                    app:boxStrokeColor="#00B4FF"
+                    app:hintTextColor="#5A6B7A"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_config_link"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minLines="3"
+                        android:maxLines="8"
+                        android:gravity="top"
+                        android:inputType="textMultiLine|textNoSuggestions"
+                        android:fontFamily="monospace"
+                        android:textColor="#00E676"
+                        android:textSize="12sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Quick import buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="10dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_scan_qr"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:text="@string/admin_btn_scan_qr"
+                        android:textAllCaps="false"
+                        android:textColor="#8A9BB0"
+                        app:icon="@drawable/ic_scan_24dp"
+                        app:iconTint="#00B4FF"
+                        app:iconGravity="start"
+                        app:strokeColor="#1A3A5C"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_paste_clipboard"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/admin_btn_paste"
+                        android:textAllCaps="false"
+                        android:textColor="#8A9BB0"
+                        app:icon="@drawable/ic_paste_24dp"
+                        app:iconTint="#00B4FF"
+                        app:iconGravity="start"
+                        app:strokeColor="#1A3A5C"
+                        app:cornerRadius="12dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Generate button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_generate"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
             android:text="@string/admin_btn_generate"
             android:textAllCaps="false"
+            android:textSize="15sp"
+            android:letterSpacing="0.04"
+            app:backgroundTint="#00B4FF"
+            android:textColor="#0A0E14"
             app:icon="@drawable/ic_lock_24dp"
+            app:iconTint="#0A0E14"
             app:iconGravity="start"
             app:cornerRadius="12dp" />
 
@@ -162,19 +291,60 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="?attr/colorOutline"
-                android:alpha="0.3"
+                android:background="#1A3A5C"
                 android:layout_marginBottom="16dp" />
 
             <!-- QR Code (single config only) -->
-            <ImageView
-                android:id="@+id/iv_qr_code"
-                android:layout_width="240dp"
-                android:layout_height="240dp"
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="260dp"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:contentDescription="@string/admin_qr_description"
-                android:background="#FFFFFF"
-                android:padding="8dp" />
+                app:cardBackgroundColor="#0A0E14"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="#1A00B4FF"
+                app:strokeWidth="1dp"
+                app:cardElevation="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:padding="12dp">
+
+                    <!-- Corner brackets label -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="[ ENCRYPTED QR ]"
+                        android:textColor="#4000B4FF"
+                        android:textSize="9sp"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.3"
+                        android:gravity="center"
+                        android:layout_marginBottom="8dp" />
+
+                    <ImageView
+                        android:id="@+id/iv_qr_code"
+                        android:layout_width="220dp"
+                        android:layout_height="220dp"
+                        android:contentDescription="@string/admin_qr_description"
+                        android:scaleType="fitCenter" />
+
+                    <!-- Scan instruction -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/admin_qr_scan_hint"
+                        android:textColor="#5A6B7A"
+                        android:textSize="10sp"
+                        android:fontFamily="monospace"
+                        android:gravity="center"
+                        android:layout_marginTop="8dp" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Batch mode count label -->
             <TextView
@@ -227,20 +397,27 @@
                     android:layout_marginEnd="6dp"
                     android:text="@string/admin_btn_copy"
                     android:textAllCaps="false"
+                    android:textColor="#8A9BB0"
                     app:icon="@drawable/ic_copy"
+                    app:iconTint="#00B4FF"
                     app:iconGravity="start"
+                    app:strokeColor="#1A3A5C"
                     app:cornerRadius="12dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_share"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="6dp"
                     android:text="@string/admin_btn_share"
                     android:textAllCaps="false"
+                    android:textColor="#8A9BB0"
                     app:icon="@drawable/ic_share_24dp"
+                    app:iconTint="#00B4FF"
                     app:iconGravity="start"
+                    app:strokeColor="#1A3A5C"
                     app:cornerRadius="12dp" />
 
             </LinearLayout>
@@ -252,7 +429,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/admin_btn_clear"
-                android:textAllCaps="false" />
+                android:textAllCaps="false"
+                android:textColor="#5A6B7A" />
 
         </LinearLayout>
 

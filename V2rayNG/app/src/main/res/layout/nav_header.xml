@@ -16,8 +16,9 @@
         android:src="@mipmap/ic_launcher"
         android:contentDescription="@null" />
 
-    <!-- Brand name -->
+    <!-- Brand name (long press = secret admin access) -->
     <TextView
+        android:id="@+id/tv_brand_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/toolbar_brand_name"

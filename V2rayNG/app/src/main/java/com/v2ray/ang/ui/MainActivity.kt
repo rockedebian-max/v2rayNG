@@ -80,8 +80,6 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
     private var hadNetworkBefore = true
     private var isNetworkRestart = false
     private var isConnecting = false
-    private var adminTapCount = 0
-    private var adminTapJob: Job? = null
 
     private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) {
@@ -120,7 +118,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         toggle.syncState()
         binding.navView.setNavigationItemSelectedListener(this)
         setupNavHeaderDeviceId()
-        setupAdminTapDetector()
+        setupAdminLongPress()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
@@ -854,76 +852,366 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         }
     }
 
-    private fun setupAdminTapDetector() {
+    /**
+     * Long press (3s) on "CYBERGUARD" title in nav header opens a terminal-style
+     * command input. Typing "sudo su admin" triggers the password prompt.
+     */
+    private fun setupAdminLongPress() {
         val headerView = binding.navView.getHeaderView(0)
-        headerView.setOnClickListener {
-            adminTapCount++
-            adminTapJob?.cancel()
-            if (adminTapCount >= 7) {
-                adminTapCount = 0
-                promptAdminPassword()
+        val brandName = headerView.findViewById<TextView>(R.id.tv_brand_name)
+        brandName.setOnLongClickListener {
+            showTerminalCommandDialog()
+            true
+        }
+    }
+
+    private companion object {
+        const val ADMIN_PREFS = "admin_lockout"
+        const val KEY_FAIL_COUNT = "fail_count"
+        const val KEY_LOCKOUT_UNTIL = "lockout_until"
+        const val MAX_ATTEMPTS = 3
+        const val LOCKOUT_DURATION_MS = 3L * 24 * 60 * 60 * 1000 // 3 days
+    }
+
+    private fun isAdminLocked(): Boolean {
+        val prefs = getSharedPreferences(ADMIN_PREFS, Context.MODE_PRIVATE)
+        val lockoutUntil = prefs.getLong(KEY_LOCKOUT_UNTIL, 0L)
+        if (lockoutUntil > 0 && System.currentTimeMillis() < lockoutUntil) {
+            return true
+        }
+        // If lockout expired, reset
+        if (lockoutUntil > 0) {
+            prefs.edit().putLong(KEY_LOCKOUT_UNTIL, 0L).putInt(KEY_FAIL_COUNT, 0).apply()
+        }
+        return false
+    }
+
+    private fun recordFailedAttempt(): Boolean {
+        val prefs = getSharedPreferences(ADMIN_PREFS, Context.MODE_PRIVATE)
+        val count = prefs.getInt(KEY_FAIL_COUNT, 0) + 1
+        if (count >= MAX_ATTEMPTS) {
+            val lockUntil = System.currentTimeMillis() + LOCKOUT_DURATION_MS
+            prefs.edit().putInt(KEY_FAIL_COUNT, count).putLong(KEY_LOCKOUT_UNTIL, lockUntil).apply()
+            return true // now locked
+        }
+        prefs.edit().putInt(KEY_FAIL_COUNT, count).apply()
+        return false
+    }
+
+    private fun resetFailedAttempts() {
+        getSharedPreferences(ADMIN_PREFS, Context.MODE_PRIVATE)
+            .edit().putInt(KEY_FAIL_COUNT, 0).putLong(KEY_LOCKOUT_UNTIL, 0L).apply()
+    }
+
+    private fun getRemainingLockoutTime(): String {
+        val prefs = getSharedPreferences(ADMIN_PREFS, Context.MODE_PRIVATE)
+        val lockoutUntil = prefs.getLong(KEY_LOCKOUT_UNTIL, 0L)
+        val remaining = lockoutUntil - System.currentTimeMillis()
+        if (remaining <= 0) return ""
+        val hours = remaining / 3_600_000
+        val minutes = (remaining % 3_600_000) / 60_000
+        return "${hours}h ${minutes}m"
+    }
+
+    private fun showTerminalCommandDialog() {
+        // Check lockout before showing anything
+        if (isAdminLocked()) {
+            toast(R.string.admin_locked_out)
+            return
+        }
+
+        val dp = resources.displayMetrics.density
+
+        // Build terminal-style layout programmatically
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(0xFF0A0E14.toInt())
+            setPadding((16 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt())
+        }
+
+        // Terminal header dots
+        val dotsRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val dotColors = intArrayOf(0xFFFF5F56.toInt(), 0xFFFFBD2E.toInt(), 0xFF27C93F.toInt())
+        for (color in dotColors) {
+            val dot = View(this).apply {
+                val size = (8 * dp).toInt()
+                layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply {
+                    marginEnd = (4 * dp).toInt()
+                }
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(color)
+                }
+            }
+            dotsRow.addView(dot)
+        }
+        val headerLabel = TextView(this).apply {
+            text = "root@cyberguard:~"
+            setTextColor(0xFF5A6B7A.toInt())
+            textSize = 10f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding((8 * dp).toInt(), 0, 0, 0)
+        }
+        dotsRow.addView(headerLabel)
+        container.addView(dotsRow, android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = (12 * dp).toInt() })
+
+        // Prompt line: "$ " + input
+        val promptRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val promptSymbol = TextView(this).apply {
+            text = "$ "
+            setTextColor(0xFF00E676.toInt())
+            textSize = 14f
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        promptRow.addView(promptSymbol)
+
+        val commandInput = EditText(this).apply {
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            setTextColor(0xFF00E676.toInt())
+            setHintTextColor(0xFF2A3A4A.toInt())
+            hint = getString(R.string.admin_terminal_command_hint)
+            textSize = 14f
+            typeface = android.graphics.Typeface.MONOSPACE
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            isSingleLine = true
+            setPadding(0, (4 * dp).toInt(), 0, (4 * dp).toInt())
+            layoutParams = android.widget.LinearLayout.LayoutParams(0,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        promptRow.addView(commandInput)
+        container.addView(promptRow)
+
+        // Separator
+        val separator = View(this).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (1 * dp).toInt()
+            ).apply { topMargin = (8 * dp).toInt() }
+            setBackgroundColor(0xFF1A3A5C.toInt())
+        }
+        container.addView(separator)
+
+        val dialog = AlertDialog.Builder(this, R.style.Theme_MaterialComponents_Dialog)
+            .setView(container)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Handle Enter key on input
+        commandInput.setOnEditorActionListener { _, _, _ ->
+            val cmd = commandInput.text.toString().trim().lowercase()
+            if (cmd == "sudo su admin" || cmd == "su admin" || cmd == "sudo admin") {
+                dialog.dismiss()
+                showTerminalPasswordDialog()
             } else {
-                adminTapJob = lifecycleScope.launch {
-                    delay(3000L)
-                    adminTapCount = 0
+                commandInput.setText("")
+                commandInput.hint = getString(R.string.admin_unknown_command)
+            }
+            true
+        }
+
+        dialog.show()
+        commandInput.requestFocus()
+    }
+
+    // Fixed admin password hash (SHA-256) — cannot be changed by users
+    private val ADMIN_PASSWORD_HASH = "96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e"
+
+    private fun showTerminalPasswordDialog() {
+        val dp = resources.displayMetrics.density
+
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(0xFF0A0E14.toInt())
+            setPadding((16 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt())
+        }
+
+        // Terminal header dots
+        val dotsRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val dotColors = intArrayOf(0xFFFF5F56.toInt(), 0xFFFFBD2E.toInt(), 0xFF27C93F.toInt())
+        for (color in dotColors) {
+            val dot = View(this).apply {
+                val size = (8 * dp).toInt()
+                layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply {
+                    marginEnd = (4 * dp).toInt()
+                }
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(color)
                 }
             }
+            dotsRow.addView(dot)
         }
-    }
-
-    private fun promptAdminPassword() {
-        val prefs = getSharedPreferences("admin_prefs", Context.MODE_PRIVATE)
-        val storedHash = prefs.getString("admin_pw_hash", null)
-
-        if (storedHash == null) {
-            showSetPasswordDialog(prefs)
-        } else {
-            showVerifyPasswordDialog(storedHash)
+        val headerLabel = TextView(this).apply {
+            text = "root@cyberguard — auth"
+            setTextColor(0xFF5A6B7A.toInt())
+            textSize = 10f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding((8 * dp).toInt(), 0, 0, 0)
         }
-    }
+        dotsRow.addView(headerLabel)
+        container.addView(dotsRow, android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = (12 * dp).toInt() })
 
-    private fun showSetPasswordDialog(prefs: android.content.SharedPreferences) {
-        val input = EditText(this).apply {
+        // "$ sudo su admin" echo
+        val echoLine = TextView(this).apply {
+            text = "$ sudo su admin"
+            setTextColor(0xFF00E676.toInt())
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        container.addView(echoLine, android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = (4 * dp).toInt() })
+
+        // "[sudo] password required for admin:"
+        val passwordLabel = TextView(this).apply {
+            text = "[sudo] password required for admin:"
+            setTextColor(0xFF00B4FF.toInt())
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        container.addView(passwordLabel, android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = (8 * dp).toInt() })
+
+        // "Password: " + input
+        val passRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val passPrompt = TextView(this).apply {
+            text = "Password: "
+            setTextColor(0xFF5A6B7A.toInt())
+            textSize = 13f
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        passRow.addView(passPrompt)
+
+        val passInput = EditText(this).apply {
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            setTextColor(0xFF00E676.toInt())
+            textSize = 13f
+            typeface = android.graphics.Typeface.MONOSPACE
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            hint = getString(R.string.admin_set_password_hint)
-            setPadding(48, 32, 48, 32)
+            isSingleLine = true
+            setPadding(0, (4 * dp).toInt(), 0, (4 * dp).toInt())
+            layoutParams = android.widget.LinearLayout.LayoutParams(0,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.admin_set_password_title)
-            .setView(input)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val pw = input.text.toString()
-                if (pw.length >= 6) {
-                    val hash = hashPassword(pw)
-                    prefs.edit().putString("admin_pw_hash", hash).apply()
-                    openAdminPanel()
-                } else {
-                    toast(R.string.admin_password_too_short)
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
+        passRow.addView(passInput)
+        container.addView(passRow)
 
-    private fun showVerifyPasswordDialog(storedHash: String) {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            hint = getString(R.string.admin_enter_password_hint)
-            setPadding(48, 32, 48, 32)
+        // Separator
+        val separator = View(this).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (1 * dp).toInt()
+            ).apply { topMargin = (8 * dp).toInt(); bottomMargin = (8 * dp).toInt() }
+            setBackgroundColor(0xFF1A3A5C.toInt())
         }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.admin_verify_password_title)
-            .setView(input)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val entered = input.text.toString()
-                if (hashPassword(entered) == storedHash) {
+        container.addView(separator)
+
+        // Result line (shown after attempt)
+        val resultLine = TextView(this).apply {
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+            visibility = View.GONE
+        }
+        container.addView(resultLine)
+
+        // Button row: [cancel]  [authenticate]
+        val btnRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.END
+        }
+        val btnCancel = TextView(this).apply {
+            text = "[cancel]"
+            setTextColor(0xFF5A6B7A.toInt())
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding((8 * dp).toInt(), (8 * dp).toInt(), (8 * dp).toInt(), (8 * dp).toInt())
+        }
+        val btnAuth = TextView(this).apply {
+            text = "[authenticate]"
+            setTextColor(0xFF00B4FF.toInt())
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding((8 * dp).toInt(), (8 * dp).toInt(), (8 * dp).toInt(), (8 * dp).toInt())
+        }
+        btnRow.addView(btnCancel)
+        btnRow.addView(btnAuth)
+        container.addView(btnRow)
+
+        val dialog = AlertDialog.Builder(this, R.style.Theme_MaterialComponents_Dialog)
+            .setView(container)
+            .setCancelable(false)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        val authenticate = {
+            val entered = passInput.text.toString()
+            if (hashPassword(entered) == ADMIN_PASSWORD_HASH) {
+                resetFailedAttempts()
+                resultLine.text = getString(R.string.admin_access_granted)
+                resultLine.setTextColor(0xFF00E676.toInt())
+                resultLine.visibility = View.VISIBLE
+                passInput.isEnabled = false
+                btnAuth.isEnabled = false
+                btnCancel.isEnabled = false
+                lifecycleScope.launch {
+                    delay(800L)
+                    dialog.dismiss()
                     openAdminPanel()
+                }
+            } else {
+                val locked = recordFailedAttempt()
+                if (locked) {
+                    resultLine.text = getString(R.string.admin_locked_out)
+                    resultLine.setTextColor(0xFFFF5F56.toInt())
+                    resultLine.visibility = View.VISIBLE
+                    passInput.isEnabled = false
+                    btnAuth.isEnabled = false
+                    lifecycleScope.launch {
+                        delay(1500L)
+                        dialog.dismiss()
+                    }
                 } else {
-                    toastError(R.string.admin_wrong_password)
+                    val prefs = getSharedPreferences(ADMIN_PREFS, Context.MODE_PRIVATE)
+                    val remaining = MAX_ATTEMPTS - prefs.getInt(KEY_FAIL_COUNT, 0)
+                    resultLine.text = getString(R.string.admin_attempts_remaining, remaining)
+                    resultLine.setTextColor(0xFFFF5F56.toInt())
+                    resultLine.visibility = View.VISIBLE
+                    passInput.setText("")
                 }
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        }
+
+        btnAuth.setOnClickListener { authenticate() }
+        passInput.setOnEditorActionListener { _, _, _ ->
+            authenticate()
+            true
+        }
+
+        dialog.show()
+        passInput.requestFocus()
     }
 
     private fun hashPassword(password: String): String {

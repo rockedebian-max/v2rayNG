@@ -20,6 +20,7 @@ object DeviceLockCrypto {
 
     private const val TAG = "DeviceLockCrypto"
     private const val APP_SECRET_SALT = "CG-2025-xK9#mP@vL3"
+    const val PUBLIC_KEY_ID = "PUBLIC-0000-0000"
 
     private const val ALGORITHM = "AES/GCM/NoPadding"
     private const val KEY_ALGORITHM = "AES"

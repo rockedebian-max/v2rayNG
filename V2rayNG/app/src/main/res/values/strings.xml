@@ -531,6 +531,9 @@
 
     <!-- Admin panel -->
     <string name="admin_panel_title">Panel de Administración</string>
+    <string name="admin_section_target">Dispositivo destino</string>
+    <string name="admin_section_expiration">Expiración</string>
+    <string name="admin_section_config">Configuración del servidor</string>
     <string name="admin_hint_device_id">Device ID del cliente (ej: A3F7-B2C1-D9E4)</string>
     <string name="admin_hint_config_link">Link(s) del servidor — uno por línea\n(vmess://, vless://, trojan://…)</string>
     <string name="admin_btn_scan_qr">Escanear QR</string>
@@ -544,16 +547,20 @@
     <string name="admin_share_via">Enviar config vía…</string>
     <string name="admin_copied_to_clipboard">Link encriptado copiado</string>
     <string name="admin_qr_description">Código QR del link encriptado</string>
+    <string name="admin_qr_scan_hint">Escanear desde la app del cliente</string>
     <string name="admin_error_empty_config">Pega al menos un link de servidor</string>
     <string name="admin_error_invalid_device_id">El Device ID debe tener formato XXXX-XXXX-XXXX</string>
     <string name="admin_error_encryption_failed">Error al encriptar — verifica los datos</string>
     <string name="admin_batch_count">%d links encriptados generados</string>
-    <string name="admin_set_password_title">Crear Contraseña de Admin</string>
-    <string name="admin_set_password_hint">Elige una contraseña (mín. 6 caracteres)</string>
     <string name="admin_verify_password_title">Acceso Admin</string>
     <string name="admin_enter_password_hint">Ingresa la contraseña de admin</string>
     <string name="admin_wrong_password">Contraseña incorrecta</string>
-    <string name="admin_password_too_short">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="admin_terminal_command_hint">Escribe un comando…</string>
+    <string name="admin_unknown_command">bash: comando no encontrado</string>
+    <string name="admin_access_denied">Acceso denegado: contraseña incorrecta</string>
+    <string name="admin_access_granted">Acceso concedido. Abriendo panel…</string>
+    <string name="admin_locked_out">Sistema bloqueado por exceso de intentos. Intenta en 72h.</string>
+    <string name="admin_attempts_remaining">Acceso denegado. Intentos restantes: %1$d</string>
 
     <!-- CyberGuard import errors -->
     <string name="cyberguard_error_no_data">Link inválido: datos encriptados faltantes</string>
@@ -564,8 +571,10 @@
 
     <!-- Expiration -->
     <string name="admin_expiration_no_expire">Sin expiración</string>
+    <string name="admin_no_device_id">Sin Device ID (acceso público)</string>
     <string name="admin_hint_amount">Cantidad</string>
     <string name="admin_hint_unit">Unidad</string>
+    <string name="admin_unit_minutes">Minutos</string>
     <string name="admin_unit_hours">Horas</string>
     <string name="admin_unit_days">Días</string>
     <string name="admin_unit_weeks">Semanas</string>

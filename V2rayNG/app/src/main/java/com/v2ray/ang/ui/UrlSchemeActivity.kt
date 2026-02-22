@@ -79,7 +79,9 @@ class UrlSchemeActivity : BaseActivity() {
         }
 
         val localDeviceId = DeviceManager.getDisplayDeviceId(this)
+        // Try device-locked first, then public key fallback
         val decrypted = DeviceLockCrypto.decrypt(encryptedData, localDeviceId)
+            ?: DeviceLockCrypto.decrypt(encryptedData, DeviceLockCrypto.PUBLIC_KEY_ID)
 
         if (decrypted == null) {
             AlertDialog.Builder(this)
