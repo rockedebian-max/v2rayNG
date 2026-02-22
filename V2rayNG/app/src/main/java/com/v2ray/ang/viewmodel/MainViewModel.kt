@@ -64,7 +64,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         getApplication<AngApplication>().unregisterReceiver(mMsgReceiver)
         tcpingTestScope.coroutineContext[Job]?.cancelChildren()
+        tcpingTestScope.coroutineContext[Job]?.cancel()
         SpeedtestManager.closeAllTcpSockets()
+        serversCache.clear()
         Log.i(AppConfig.TAG, "Main ViewModel is cleared")
         super.onCleared()
     }
@@ -193,14 +195,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (subscriptionId.isEmpty() && keywordFilter.isEmpty()) {
                 serverList
             } else {
-                serversCache.map { it.guid }.toList()
+                serversCache.map { it.guid }
             }
 
-        val ret = AngConfigManager.shareNonCustomConfigsToClipboard(
+        return AngConfigManager.shareNonCustomConfigsToClipboard(
             getApplication<AngApplication>(),
             serverListCopy
         )
-        return ret
     }
 
     /**
@@ -209,20 +210,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun testAllTcping() {
         tcpingTestScope.coroutineContext[Job]?.cancelChildren()
         SpeedtestManager.closeAllTcpSockets()
-        MmkvManager.clearAllTestDelayResults(serversCache.map { it.guid }.toList())
+        val guids = serversCache.map { it.guid }
+        MmkvManager.clearAllTestDelayResults(guids)
 
-        val serversCopy = serversCache.toList()
-        for (item in serversCopy) {
-            item.profile.let { outbound ->
-                val serverAddress = outbound.server
-                val serverPort = outbound.serverPort
-                if (serverAddress != null && serverPort != null) {
-                    tcpingTestScope.launch {
-                        val testResult = SpeedtestManager.tcping(serverAddress, serverPort.toInt())
-                        launch(Dispatchers.Main) {
-                            MmkvManager.encodeServerTestDelayMillis(item.guid, testResult)
-                            updateListAction.value = getPosition(item.guid)
-                        }
+        for (item in serversCache) {
+            val serverAddress = item.profile.server
+            val serverPort = item.profile.serverPort
+            if (serverAddress != null && serverPort != null) {
+                tcpingTestScope.launch {
+                    val testResult = SpeedtestManager.tcping(serverAddress, serverPort.toInt())
+                    launch(Dispatchers.Main) {
+                        MmkvManager.encodeServerTestDelayMillis(item.guid, testResult)
+                        updateListAction.value = getPosition(item.guid)
                     }
                 }
             }
@@ -234,13 +233,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun testAllRealPing() {
         MessageUtil.sendMsg2TestService(getApplication(), AppConfig.MSG_MEASURE_CONFIG_CANCEL, "")
-        MmkvManager.clearAllTestDelayResults(serversCache.map { it.guid }.toList())
+        val guids = ArrayList<String>(serversCache.map { it.guid })
+        MmkvManager.clearAllTestDelayResults(guids)
         updateListAction.value = -1
         isTesting.value = true
 
-        val serversCopy = serversCache.toList()
         viewModelScope.launch(Dispatchers.Default) {
-            val guids = ArrayList<String>(serversCopy.map { it.guid })
             if (guids.isEmpty()) {
                 withContext(Dispatchers.Main) { isTesting.value = false }
                 return@launch
@@ -313,24 +311,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @return The number of removed servers.
      */
     fun removeDuplicateServer(): Int {
-        val serversCacheCopy = serversCache.toList().toMutableList()
-        val deleteServer = mutableListOf<String>()
-        serversCacheCopy.forEachIndexed { index, sc ->
-            val profile = sc.profile
-            serversCacheCopy.forEachIndexed { index2, sc2 ->
-                if (index2 > index) {
-                    val profile2 = sc2.profile
-                    if (profile == profile2 && !deleteServer.contains(sc2.guid)) {
-                        deleteServer.add(sc2.guid)
-                    }
-                }
+        val seen = HashSet<ProfileItemKey>()
+        val deleteGuids = mutableListOf<String>()
+        for (sc in serversCache) {
+            val key = ProfileItemKey(sc.profile)
+            if (!seen.add(key)) {
+                deleteGuids.add(sc.guid)
             }
         }
-        for (it in deleteServer) {
-            MmkvManager.removeServer(it)
+        for (guid in deleteGuids) {
+            MmkvManager.removeServer(guid)
         }
+        return deleteGuids.size
+    }
 
-        return deleteServer.count()
+    /**
+     * Wrapper for ProfileItem equality check with proper hashCode.
+     * Used only for duplicate detection to avoid O(n²) comparisons.
+     */
+    private data class ProfileItemKey(private val p: ProfileItem) {
+        override fun equals(other: Any?): Boolean {
+            if (other !is ProfileItemKey) return false
+            return p == other.p
+        }
+        override fun hashCode(): Int {
+            var result = p.server?.hashCode() ?: 0
+            result = 31 * result + (p.serverPort?.hashCode() ?: 0)
+            result = 31 * result + (p.password?.hashCode() ?: 0)
+            result = 31 * result + (p.network?.hashCode() ?: 0)
+            result = 31 * result + (p.security?.hashCode() ?: 0)
+            return result
+        }
     }
 
     /**
@@ -338,16 +349,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @return The number of removed servers.
      */
     fun removeAllServer(): Int {
-        val count =
-            if (subscriptionId.isEmpty() && keywordFilter.isEmpty()) {
-                MmkvManager.removeAllServer()
-            } else {
-                val serversCopy = serversCache.toList()
-                for (item in serversCopy) {
-                    MmkvManager.removeServer(item.guid)
-                }
-                serversCache.toList().count()
-            }
+        if (subscriptionId.isEmpty() && keywordFilter.isEmpty()) {
+            return MmkvManager.removeAllServer()
+        }
+        val count = serversCache.size
+        for (item in serversCache) {
+            MmkvManager.removeServer(item.guid)
+        }
         return count
     }
 
@@ -356,14 +364,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @return The number of removed servers.
      */
     fun removeInvalidServer(): Int {
-        var count = 0
         if (subscriptionId.isEmpty() && keywordFilter.isEmpty()) {
-            count += MmkvManager.removeInvalidServer("")
-        } else {
-            val serversCopy = serversCache.toList()
-            for (item in serversCopy) {
-                count += MmkvManager.removeInvalidServer(item.guid)
-            }
+            return MmkvManager.removeInvalidServer("")
+        }
+        var count = 0
+        for (item in serversCache) {
+            count += MmkvManager.removeInvalidServer(item.guid)
         }
         return count
     }
@@ -372,20 +378,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Sorts servers by their test results.
      */
     fun sortByTestResults() {
-        data class ServerDelay(var guid: String, var testDelayMillis: Long)
-
-        val serverDelays = mutableListOf<ServerDelay>()
         val serverList = MmkvManager.decodeServerList()
-        serverList.forEach { key ->
+        // Build delay lookup map — one pass, no repeated deserialization
+        val delayMap = HashMap<String, Long>(serverList.size)
+        for (key in serverList) {
             val delay = MmkvManager.decodeServerAffiliationInfo(key)?.testDelayMillis ?: 0L
-            serverDelays.add(ServerDelay(key, if (delay <= 0L) 999999 else delay))
+            delayMap[key] = if (delay <= 0L) 999999L else delay
         }
-        serverDelays.sortBy { it.testDelayMillis }
-
-        serverDelays.forEach {
-            serverList.remove(it.guid)
-            serverList.add(it.guid)
-        }
+        // Sort in place — O(n log n), no remove/add pattern
+        serverList.sortBy { delayMap[it] ?: 999999L }
 
         MmkvManager.encodeServerList(serverList)
     }

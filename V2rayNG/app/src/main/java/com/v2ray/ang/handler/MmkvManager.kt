@@ -79,10 +79,12 @@ object MmkvManager {
      */
     fun decodeServerList(): MutableList<String> {
         val json = mainStorage.decodeString(KEY_ANG_CONFIGS)
-        return if (json.isNullOrBlank()) {
+        if (json.isNullOrBlank()) return mutableListOf()
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<MutableList<String>>() {}.type
+            com.google.gson.Gson().fromJson<MutableList<String>>(json, type) ?: mutableListOf()
+        } catch (e: Exception) {
             mutableListOf()
-        } else {
-            JsonUtil.fromJson(json, Array<String>::class.java)?.toMutableList() ?: mutableListOf()
         }
     }
 
@@ -412,10 +414,12 @@ object MmkvManager {
      */
     fun decodeSubsList(): MutableList<String> {
         val json = mainStorage.decodeString(KEY_SUB_IDS)
-        return if (json.isNullOrBlank()) {
+        if (json.isNullOrBlank()) return mutableListOf()
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<MutableList<String>>() {}.type
+            com.google.gson.Gson().fromJson<MutableList<String>>(json, type) ?: mutableListOf()
+        } catch (e: Exception) {
             mutableListOf()
-        } else {
-            JsonUtil.fromJson(json, Array<String>::class.java)?.toMutableList()?: mutableListOf()
         }
     }
 

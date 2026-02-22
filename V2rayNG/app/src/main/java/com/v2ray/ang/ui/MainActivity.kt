@@ -999,7 +999,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         }
         container.addView(separator)
 
-        val dialog = AlertDialog.Builder(this, R.style.Theme_MaterialComponents_Dialog)
+        val dialog = AlertDialog.Builder(this)
             .setView(container)
             .create()
 
@@ -1157,7 +1157,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         btnRow.addView(btnAuth)
         container.addView(btnRow)
 
-        val dialog = AlertDialog.Builder(this, R.style.Theme_MaterialComponents_Dialog)
+        val dialog = AlertDialog.Builder(this)
             .setView(container)
             .setCancelable(false)
             .create()
@@ -1423,6 +1423,10 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         stopConnectingAnimation()
         restartJob?.cancel()
         terminalJob?.cancel()
+        timerJob?.cancel()
+        timerJob = null
+        networkDebounceJob?.cancel()
+        networkDebounceJob = null
         tabMediator?.detach()
         super.onDestroy()
     }
