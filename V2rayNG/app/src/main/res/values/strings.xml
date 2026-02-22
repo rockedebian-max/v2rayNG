@@ -265,6 +265,7 @@
     <string name="logcat_copy">Copy</string>
     <string name="logcat_clear">Clear</string>
     <string name="title_service_restart">Reiniciar servicio</string>
+    <string name="sub_setting_remarks">Nombre</string>
     <string name="title_ping_all_server">Ping rápido</string>
     <string name="title_real_ping_all_server">Latencia real</string>
     <string name="title_user_asset_setting">Asset files</string>
