@@ -6,14 +6,22 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
-import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
 import com.v2ray.ang.AppConfig
-import java.lang.reflect.Type
 
 object JsonUtil {
-    private var gson = Gson()
+    private val gson = Gson()
+    private val gsonPretty: Gson by lazy {
+        GsonBuilder()
+            .setPrettyPrinting()
+            .disableHtmlEscaping()
+            .registerTypeAdapter(
+                object : TypeToken<Double>() {}.type,
+                JsonSerializer<Double> { src, _, _ -> JsonPrimitive(src?.toInt()) }
+            )
+            .create()
+    }
 
     /**
      * Converts an object to its JSON representation.
@@ -43,21 +51,8 @@ object JsonUtil {
      * @return The pretty-printed JSON representation of the object, or null if the object is null.
      */
     fun toJsonPretty(src: Any?): String? {
-        if (src == null)
-            return null
-        val gsonPre = GsonBuilder()
-            .setPrettyPrinting()
-            .disableHtmlEscaping()
-            .registerTypeAdapter( // custom serializer is needed here since JSON by default parse number as Double, core will fail to start
-                object : TypeToken<Double>() {}.type,
-                JsonSerializer { src: Double?, _: Type?, _: JsonSerializationContext? ->
-                    JsonPrimitive(
-                        src?.toInt()
-                    )
-                }
-            )
-            .create()
-        return gsonPre.toJson(src)
+        if (src == null) return null
+        return gsonPretty.toJson(src)
     }
 
     /**

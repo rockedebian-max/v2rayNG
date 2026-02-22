@@ -6,6 +6,10 @@ import com.v2ray.ang.AppConfig.ANG_PACKAGE
 import java.io.IOException
 
 class LogcatViewModel : ViewModel() {
+    companion object {
+        private const val MAX_LOG_LINES = 5000
+    }
+
     private val logsetsAll: MutableList<String> = mutableListOf()
     private var filteredLogs: List<String> = emptyList()
     private var currentFilter: String = ""
@@ -25,7 +29,7 @@ class LogcatViewModel : ViewModel() {
             val allText = process.inputStream.bufferedReader().use { it.readLines() }.reversed()
 
             logsetsAll.clear()
-            logsetsAll.addAll(allText)
+            logsetsAll.addAll(allText.take(MAX_LOG_LINES))
             applyFilter()
         } catch (e: IOException) {
             android.util.Log.e(AppConfig.TAG, "Failed to get logcat", e)

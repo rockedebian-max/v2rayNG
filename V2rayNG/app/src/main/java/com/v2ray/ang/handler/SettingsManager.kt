@@ -201,19 +201,6 @@ object SettingsManager {
     }
 
     /**
-     * Swap subscriptions.
-     * @param fromPosition The position to swap from.
-     * @param toPosition The position to swap to.
-     */
-    fun swapSubscriptions(fromPosition: Int, toPosition: Int) {
-        val subsList = MmkvManager.decodeSubsList()
-        if (subsList.isEmpty()) return
-
-        Collections.swap(subsList, fromPosition, toPosition)
-        MmkvManager.encodeSubsList(subsList)
-    }
-
-    /**
      * Get server via remarks.
      * @param remarks The remarks of the server.
      * @return The ProfileItem.
@@ -405,7 +392,6 @@ object SettingsManager {
         ensureDefaultValue(AppConfig.PREF_MODE, AppConfig.VPN)
         ensureDefaultValue(AppConfig.PREF_VPN_DNS, AppConfig.DNS_VPN)
         ensureDefaultValue(AppConfig.PREF_VPN_MTU, AppConfig.VPN_MTU.toString())
-        ensureDefaultValue(AppConfig.SUBSCRIPTION_AUTO_UPDATE_INTERVAL, AppConfig.SUBSCRIPTION_DEFAULT_UPDATE_INTERVAL)
         ensureDefaultValue(AppConfig.PREF_SOCKS_PORT, AppConfig.PORT_SOCKS)
         ensureDefaultValue(AppConfig.PREF_REMOTE_DNS, AppConfig.DNS_PROXY)
         ensureDefaultValue(AppConfig.PREF_DOMESTIC_DNS, AppConfig.DNS_DIRECT)

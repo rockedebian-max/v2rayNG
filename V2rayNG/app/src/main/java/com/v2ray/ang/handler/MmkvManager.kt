@@ -8,12 +8,10 @@ import com.v2ray.ang.dto.AssetUrlItem
 import com.v2ray.ang.dto.ProfileItem
 import com.v2ray.ang.dto.RulesetItem
 import com.v2ray.ang.dto.ServerAffiliationInfo
-import com.v2ray.ang.dto.SubscriptionCache
-import com.v2ray.ang.dto.SubscriptionItem
-import com.v2ray.ang.dto.WebDavConfig
 import com.v2ray.ang.util.CryptoHelper
 import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.Utils
+import kotlin.jvm.Volatile
 
 object MmkvManager {
 
@@ -24,22 +22,29 @@ object MmkvManager {
     private const val ID_PROFILE_FULL_CONFIG = "PROFILE_FULL_CONFIG"
     private const val ID_SERVER_RAW = "SERVER_RAW"
     private const val ID_SERVER_AFF = "SERVER_AFF"
-    private const val ID_SUB = "SUB"
     private const val ID_ASSET = "ASSET"
     private const val ID_SETTING = "SETTING"
     private const val KEY_SELECTED_SERVER = "SELECTED_SERVER"
     private const val KEY_ANG_CONFIGS = "ANG_CONFIGS"
-    private const val KEY_SUB_IDS = "SUB_IDS"
-    private const val KEY_WEBDAV_CONFIG = "WEBDAV_CONFIG"
+
+    // Cache TTL to avoid repeated JSON deserialization
+    private const val CACHE_TTL_MS = 5000L
 
     //private val profileStorage by lazy { MMKV.mmkvWithID(ID_PROFILE_CONFIG, MMKV.MULTI_PROCESS_MODE) }
     private val mainStorage by lazy { MMKV.mmkvWithID(ID_MAIN, MMKV.MULTI_PROCESS_MODE) }
     private val profileFullStorage by lazy { MMKV.mmkvWithID(ID_PROFILE_FULL_CONFIG, MMKV.MULTI_PROCESS_MODE) }
     private val serverRawStorage by lazy { MMKV.mmkvWithID(ID_SERVER_RAW, MMKV.MULTI_PROCESS_MODE) }
     private val serverAffStorage by lazy { MMKV.mmkvWithID(ID_SERVER_AFF, MMKV.MULTI_PROCESS_MODE) }
-    private val subStorage by lazy { MMKV.mmkvWithID(ID_SUB, MMKV.MULTI_PROCESS_MODE) }
     private val assetStorage by lazy { MMKV.mmkvWithID(ID_ASSET, MMKV.MULTI_PROCESS_MODE) }
     private val settingsStorage by lazy { MMKV.mmkvWithID(ID_SETTING, MMKV.MULTI_PROCESS_MODE) }
+
+    // Cached server list to avoid repeated Gson deserialization
+    @Volatile private var cachedServerList: MutableList<String>? = null
+    @Volatile private var serverListCacheTime = 0L
+
+    // Cached routing rulesets
+    @Volatile private var cachedRulesets: MutableList<RulesetItem>? = null
+    @Volatile private var rulesetsCacheTime = 0L
 
     //endregion
 
@@ -70,6 +75,8 @@ object MmkvManager {
      */
     fun encodeServerList(serverList: MutableList<String>) {
         mainStorage.encode(KEY_ANG_CONFIGS, JsonUtil.toJson(serverList))
+        cachedServerList = serverList
+        serverListCacheTime = System.currentTimeMillis()
     }
 
     /**
@@ -78,14 +85,21 @@ object MmkvManager {
      * @return The list of server GUIDs.
      */
     fun decodeServerList(): MutableList<String> {
+        val now = System.currentTimeMillis()
+        cachedServerList?.let {
+            if (now - serverListCacheTime < CACHE_TTL_MS) return it
+        }
         val json = mainStorage.decodeString(KEY_ANG_CONFIGS)
         if (json.isNullOrBlank()) return mutableListOf()
-        return try {
+        val result = try {
             val type = object : com.google.gson.reflect.TypeToken<MutableList<String>>() {}.type
             com.google.gson.Gson().fromJson<MutableList<String>>(json, type) ?: mutableListOf()
         } catch (e: Exception) {
             mutableListOf()
         }
+        cachedServerList = result
+        serverListCacheTime = now
+        return result
     }
 
     /**
@@ -268,6 +282,7 @@ object MmkvManager {
         profileFullStorage.clearAll()
         //profileStorage.clearAll()
         serverAffStorage.clearAll()
+        cachedServerList = null
         return count
     }
 
@@ -320,108 +335,6 @@ object MmkvManager {
     }
 
     //endregion
-
-    //region Subscriptions
-
-    /**
-     * Initializes the subscription list.
-     */
-    private fun initSubsList() {
-        val subsList = decodeSubsList()
-        if (subsList.isNotEmpty()) {
-            return
-        }
-        subStorage.allKeys()?.forEach { key ->
-            subsList.add(key)
-        }
-        encodeSubsList(subsList)
-    }
-
-    /**
-     * Decodes the subscriptions.
-     *
-     * @return The list of subscriptions.
-     */
-    fun decodeSubscriptions(): List<SubscriptionCache> {
-        initSubsList()
-
-        val subscriptions = mutableListOf<SubscriptionCache>()
-        decodeSubsList().forEach { key ->
-            val json = subStorage.decodeString(key)
-            if (!json.isNullOrBlank()) {
-                val item = JsonUtil.fromJson(json, SubscriptionItem::class.java)?: SubscriptionItem()
-                subscriptions.add(SubscriptionCache(key, item))
-            }
-        }
-        return subscriptions
-    }
-
-    /**
-     * Removes the subscription.
-     *
-     * @param subid The subscription ID.
-     */
-    fun removeSubscription(subid: String) {
-        subStorage.remove(subid)
-        val subsList = decodeSubsList()
-        subsList.remove(subid)
-        encodeSubsList(subsList)
-
-        removeServerViaSubid(subid)
-    }
-
-    /**
-     * Encodes the subscription.
-     *
-     * @param guid The subscription GUID.
-     * @param subItem The subscription item.
-     */
-    fun encodeSubscription(guid: String, subItem: SubscriptionItem) {
-        val key = guid.ifBlank { Utils.getUuid() }
-        subStorage.encode(key, JsonUtil.toJson(subItem))
-
-        val subsList = decodeSubsList()
-        if (!subsList.contains(key)) {
-            subsList.add(key)
-            encodeSubsList(subsList)
-        }
-    }
-
-    /**
-     * Decodes the subscription.
-     *
-     * @param subscriptionId The subscription ID.
-     * @return The subscription item.
-     */
-    fun decodeSubscription(subscriptionId: String): SubscriptionItem? {
-        val json = subStorage.decodeString(subscriptionId) ?: return null
-        return JsonUtil.fromJson(json, SubscriptionItem::class.java)
-    }
-
-    /**
-     * Encodes the subscription list.
-     *
-     * @param subsList The list of subscription IDs.
-     */
-    fun encodeSubsList(subsList: MutableList<String>) {
-        mainStorage.encode(KEY_SUB_IDS, JsonUtil.toJson(subsList))
-    }
-
-    /**
-     * Decodes the subscription list.
-     *
-     * @return The list of subscription IDs.
-     */
-    fun decodeSubsList(): MutableList<String> {
-        val json = mainStorage.decodeString(KEY_SUB_IDS)
-        if (json.isNullOrBlank()) return mutableListOf()
-        return try {
-            val type = object : com.google.gson.reflect.TypeToken<MutableList<String>>() {}.type
-            com.google.gson.Gson().fromJson<MutableList<String>>(json, type) ?: mutableListOf()
-        } catch (e: Exception) {
-            mutableListOf()
-        }
-    }
 
     //endregion
 
@@ -485,9 +398,16 @@ object MmkvManager {
      * @return The list of routing rulesets.
      */
     fun decodeRoutingRulesets(): MutableList<RulesetItem>? {
+        val now = System.currentTimeMillis()
+        cachedRulesets?.let {
+            if (now - rulesetsCacheTime < CACHE_TTL_MS) return it
+        }
         val ruleset = settingsStorage.decodeString(PREF_ROUTING_RULESET)
         if (ruleset.isNullOrEmpty()) return null
-        return JsonUtil.fromJson(ruleset, Array<RulesetItem>::class.java)?.toMutableList()?: mutableListOf()
+        val result = JsonUtil.fromJson(ruleset, Array<RulesetItem>::class.java)?.toMutableList() ?: mutableListOf()
+        cachedRulesets = result
+        rulesetsCacheTime = now
+        return result
     }
 
     /**
@@ -500,6 +420,8 @@ object MmkvManager {
             encodeSettings(PREF_ROUTING_RULESET, "")
         else
             encodeSettings(PREF_ROUTING_RULESET, JsonUtil.toJson(rulesetList))
+        cachedRulesets = rulesetList
+        rulesetsCacheTime = System.currentTimeMillis()
     }
 
     //endregion
@@ -672,25 +594,6 @@ object MmkvManager {
      */
     fun decodeStartOnBoot(): Boolean {
         return decodeSettingsBool(PREF_IS_BOOTED, false)
-    }
-
-    //endregion
-
-    //region WebDAV
-
-    /**
-     * Encodes the WebDAV config as JSON into storage.
-     */
-    fun encodeWebDavConfig(config: WebDavConfig): Boolean {
-        return mainStorage.encode(KEY_WEBDAV_CONFIG, JsonUtil.toJson(config))
-    }
-
-    /**
-     * Decodes the WebDAV config from storage.
-     */
-    fun decodeWebDavConfig(): WebDavConfig? {
-        val json = mainStorage.decodeString(KEY_WEBDAV_CONFIG) ?: return null
-        return JsonUtil.fromJson(json, WebDavConfig::class.java)
     }
 
     //endregion

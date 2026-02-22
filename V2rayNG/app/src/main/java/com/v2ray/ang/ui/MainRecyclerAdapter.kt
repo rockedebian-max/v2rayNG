@@ -42,7 +42,7 @@ class MainRecyclerAdapter(
 
     @SuppressLint("NotifyDataSetChanged")
     fun setData(newData: MutableList<ServersCache>?, position: Int = -1) {
-        data = newData?.toMutableList() ?: mutableListOf()
+        data = newData ?: mutableListOf()
 
         if (position >= 0 && position in data.indices) {
             notifyItemChanged(position)
@@ -178,12 +178,8 @@ class MainRecyclerAdapter(
      * @return Subscription remarks string, or empty string if none
      */
     private fun getSubscriptionRemarks(profile: ProfileItem): String {
-        val subRemarks =
-            if (mainViewModel.subscriptionId.isEmpty())
-                MmkvManager.decodeSubscription(profile.subscriptionId)?.remarks?.firstOrNull()
-            else
-                null
-        return subRemarks?.toString() ?: ""
+        // Subscription system removed — no group remarks to display
+        return ""
     }
 
     fun removeServerSub(guid: String, position: Int) {

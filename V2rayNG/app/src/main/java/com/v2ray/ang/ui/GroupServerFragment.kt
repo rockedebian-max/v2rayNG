@@ -177,10 +177,6 @@ class GroupServerFragment : BaseFragment<FragmentGroupServerBinding>() {
                 ownerActivity.startActivity(intent.setClass(ownerActivity, ServerCustomConfigActivity::class.java))
             }
 
-            EConfigType.POLICYGROUP -> {
-                ownerActivity.startActivity(intent.setClass(ownerActivity, ServerGroupActivity::class.java))
-            }
-
             else -> {
                 ownerActivity.startActivity(intent.setClass(ownerActivity, ServerActivity::class.java))
             }

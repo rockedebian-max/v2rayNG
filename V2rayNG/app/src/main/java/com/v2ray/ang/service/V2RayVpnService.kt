@@ -52,15 +52,17 @@ class V2RayVpnService : VpnService(), ServiceControl {
 
     private val connectivity by lazy { getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager }
 
-    @delegate:RequiresApi(Build.VERSION_CODES.P)
-    private val defaultNetworkCallback by lazy {
-        object : ConnectivityManager.NetworkCallback() {
+    @RequiresApi(Build.VERSION_CODES.P)
+    private var defaultNetworkCallback: ConnectivityManager.NetworkCallback? = null
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun createNetworkCallback(): ConnectivityManager.NetworkCallback {
+        return object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 setUnderlyingNetworks(arrayOf(network))
             }
 
             override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                // it's a good idea to refresh capabilities
                 setUnderlyingNetworks(arrayOf(network))
             }
 
@@ -249,9 +251,12 @@ class V2RayVpnService : VpnService(), ServiceControl {
         // Android P (API 28) and above: Configure network callbacks
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                connectivity.requestNetwork(defaultNetworkRequest, defaultNetworkCallback)
+                val callback = createNetworkCallback()
+                defaultNetworkCallback = callback
+                connectivity.requestNetwork(defaultNetworkRequest, callback)
             } catch (e: Exception) {
                 Log.e(AppConfig.TAG, "Failed to request default network", e)
+                defaultNetworkCallback = null
             }
         }
 
@@ -337,10 +342,11 @@ class V2RayVpnService : VpnService(), ServiceControl {
         isRunning = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                connectivity.unregisterNetworkCallback(defaultNetworkCallback)
+                defaultNetworkCallback?.let { connectivity.unregisterNetworkCallback(it) }
             } catch (ignored: Exception) {
                 // ignored
             }
+            defaultNetworkCallback = null
         }
 
         tun2SocksService?.stopTun2Socks()

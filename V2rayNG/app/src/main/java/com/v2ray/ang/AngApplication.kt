@@ -2,10 +2,7 @@ package com.v2ray.ang
 
 import android.content.Context
 import androidx.multidex.MultiDexApplication
-import androidx.work.Configuration
-import androidx.work.WorkManager
 import com.tencent.mmkv.MMKV
-import com.v2ray.ang.AppConfig.ANG_PACKAGE
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.util.CryptoHelper
 import com.v2ray.ang.util.DeviceManager
@@ -24,10 +21,6 @@ class AngApplication : MultiDexApplication() {
         application = this
     }
 
-    private val workManagerConfiguration: Configuration = Configuration.Builder()
-        .setDefaultProcessName("${ANG_PACKAGE}:bg")
-        .build()
-
     /**
      * Initializes the application.
      */
@@ -42,9 +35,6 @@ class AngApplication : MultiDexApplication() {
         // Ensure critical preference defaults are present in MMKV early
         SettingsManager.ensureDefaultSettings()
         SettingsManager.setNightMode()
-        // Initialize WorkManager with the custom configuration
-        WorkManager.initialize(this, workManagerConfiguration)
-
         SettingsManager.initRoutingRulesets(this)
         SettingsManager.migrateHysteria2PinSHA256()
 

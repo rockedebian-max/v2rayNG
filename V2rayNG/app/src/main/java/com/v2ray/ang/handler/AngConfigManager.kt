@@ -9,8 +9,6 @@ import com.v2ray.ang.AppConfig.HY2
 import com.v2ray.ang.R
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.dto.ProfileItem
-import com.v2ray.ang.dto.SubscriptionCache
-import com.v2ray.ang.dto.SubscriptionItem
 import com.v2ray.ang.fmt.CustomFmt
 import com.v2ray.ang.fmt.Hysteria2Fmt
 import com.v2ray.ang.fmt.ShadowsocksFmt
@@ -23,7 +21,6 @@ import com.v2ray.ang.util.HttpUtil
 import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.QRCodeDecoder
 import com.v2ray.ang.util.Utils
-import java.net.URI
 
 object AngConfigManager {
 
@@ -107,42 +104,7 @@ object AngConfigManager {
             count = parseCustomConfigServer(server, subid)
         }
 
-        var countSub = parseBatchSubscription(server)
-        if (countSub <= 0) {
-            countSub = parseBatchSubscription(Utils.decode(server))
-        }
-        if (countSub > 0) {
-            updateConfigViaSubAll()
-        }
-
-        return count to countSub
-    }
-
-    /**
-     * Parses a batch of subscriptions.
-     *
-     * @param servers The servers string.
-     * @return The number of subscriptions parsed.
-     */
-    private fun parseBatchSubscription(servers: String?): Int {
-        try {
-            if (servers == null) {
-                return 0
-            }
-
-            var count = 0
-            servers.lines()
-                .distinct()
-                .forEach { str ->
-                    if (Utils.isValidSubUrl(str)) {
-                        count += importUrlAsSubscription(str)
-                    }
-                }
-            return count
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to parse batch subscription", e)
-        }
-        return 0
+        return count to 0
     }
 
     /**
@@ -175,13 +137,12 @@ object AngConfigManager {
                 MmkvManager.removeServerViaSubid(subid)
             }
 
-            val subItem = MmkvManager.decodeSubscription(subid)
             var count = 0
             servers.lines()
                 .distinct()
                 .reversed()
                 .forEach {
-                    val resId = parseConfig(it, subid, subItem, removedSelectedServer, expiresAt)
+                    val resId = parseConfig(it, subid, removedSelectedServer, expiresAt)
                     if (resId == 0) {
                         count++
                     }
@@ -268,7 +229,6 @@ object AngConfigManager {
     private fun parseConfig(
         str: String?,
         subid: String,
-        subItem: SubscriptionItem?,
         removedSelectedServer: ProfileItem?,
         expiresAt: Long? = null
     ): Int {
@@ -298,12 +258,6 @@ object AngConfigManager {
             if (config == null) {
                 return R.string.toast_incorrect_protocol
             }
-            //filter
-            if (subItem?.filter != null && subItem.filter?.isNotEmpty() == true && config.remarks.isNotEmpty()) {
-                val matched = Regex(pattern = subItem.filter ?: "")
-                    .containsMatchIn(input = config.remarks)
-                if (!matched) return -1
-            }
 
             config.subscriptionId = subid
             config.description = generateDescription(config)
@@ -319,124 +273,6 @@ object AngConfigManager {
             return -1
         }
         return 0
-    }
-
-    /**
-     * Updates the configuration via all subscriptions.
-     *
-     * @return The number of configurations updated.
-     */
-    fun updateConfigViaSubAll(): Int {
-        var count = 0
-        try {
-            MmkvManager.decodeSubscriptions().forEach {
-                count += updateConfigViaSub(it)
-            }
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to update config via all subscriptions", e)
-            return 0
-        }
-        return count
-    }
-
-    /**
-     * Updates the configuration via a subscription.
-     *
-     * @param it The subscription item.
-     * @return The number of configurations updated.
-     */
-    fun updateConfigViaSub(it: SubscriptionCache): Int {
-        try {
-            if (TextUtils.isEmpty(it.guid)
-                || TextUtils.isEmpty(it.subscription.remarks)
-                || TextUtils.isEmpty(it.subscription.url)
-            ) {
-                return 0
-            }
-            if (!it.subscription.enabled) {
-                return 0
-            }
-            val url = HttpUtil.toIdnUrl(it.subscription.url)
-            if (!Utils.isValidUrl(url)) {
-                return 0
-            }
-            if (!it.subscription.allowInsecureUrl) {
-                if (!Utils.isValidSubUrl(url)) {
-                    return 0
-                }
-            }
-            Log.i(AppConfig.TAG, url)
-            val userAgent = it.subscription.userAgent
-
-            var configText = try {
-                val httpPort = SettingsManager.getHttpPort()
-                HttpUtil.getUrlContentWithUserAgent(url, userAgent, 15000, httpPort)
-            } catch (e: Exception) {
-                Log.e(AppConfig.ANG_PACKAGE, "Update subscription: proxy not ready or other error", e)
-                ""
-            }
-            if (configText.isEmpty()) {
-                configText = try {
-                    HttpUtil.getUrlContentWithUserAgent(url, userAgent)
-                } catch (e: Exception) {
-                    Log.e(AppConfig.TAG, "Update subscription: Failed to get URL content with user agent", e)
-                    ""
-                }
-            }
-            if (configText.isEmpty()) {
-                return 0
-            }
-            val count = parseConfigViaSub(configText, it.guid, false)
-            if (count > 0) {
-                it.subscription.lastUpdated = System.currentTimeMillis()
-                MmkvManager.encodeSubscription(it.guid, it.subscription)
-                Log.i(AppConfig.TAG, "Subscription updated: ${it.subscription.remarks}, $count configs")
-            }
-            return count
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to update config via subscription", e)
-            return 0
-        }
-    }
-
-    /**
-     * Parses the configuration via a subscription.
-     *
-     * @param server The server string.
-     * @param subid The subscription ID.
-     * @param append Whether to append the configurations.
-     * @return The number of configurations parsed.
-     */
-    private fun parseConfigViaSub(server: String?, subid: String, append: Boolean): Int {
-        var count = parseBatchConfig(Utils.decode(server), subid, append)
-        if (count <= 0) {
-            count = parseBatchConfig(server, subid, append)
-        }
-        if (count <= 0) {
-            count = parseCustomConfigServer(server, subid)
-        }
-        return count
-    }
-
-    /**
-     * Imports a URL as a subscription.
-     *
-     * @param url The URL.
-     * @return The number of subscriptions imported.
-     */
-    private fun importUrlAsSubscription(url: String): Int {
-        val subscriptions = MmkvManager.decodeSubscriptions()
-        subscriptions.forEach {
-            if (it.subscription.url == url) {
-                return 0
-            }
-        }
-        val uri = URI(Utils.fixIllegalUrl(url))
-        val subItem = SubscriptionItem()
-        subItem.remarks = uri.fragment ?: "import sub"
-        subItem.url = url
-        MmkvManager.encodeSubscription("", subItem)
-        return 1
     }
 
     /** Generates a description for the profile.

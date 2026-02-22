@@ -84,10 +84,7 @@
             android:name=".ui.ServerCustomConfigActivity"
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged" />
-        <activity
-            android:name=".ui.ServerGroupActivity"
-            android:exported="false"
-            android:windowSoftInputMode="stateUnchanged" />
+        <!-- ServerGroupActivity removed: unused in CYBERGUARD -->
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false" />
@@ -109,19 +106,12 @@
         <activity
             android:name=".ui.RoutingEditActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.SubSettingActivity"
-            android:exported="false" />
+        <!-- SubSettingActivity removed: subscription system unused -->
         <activity
             android:name=".ui.UserAssetActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.UserAssetUrlActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".ui.SubEditActivity"
-            android:exported="false" />
+        <!-- UserAssetUrlActivity removed: unused in CYBERGUARD -->
+        <!-- SubEditActivity removed: subscription system unused -->
         <activity
             android:name=".ui.ScScannerActivity"
             android:exported="false" />
@@ -266,18 +256,7 @@
             </intent-filter>
         </receiver>
         <!-- =====================Tasker===================== -->
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-
-            <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
-                android:value="androidx.startup"
-                tools:node="remove" />
-
-        </provider>
+        <!-- WorkManager InitializationProvider removed: subscription auto-update unused -->
 
         <provider
             android:name="androidx.core.content.FileProvider"

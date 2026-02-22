@@ -249,10 +249,6 @@
     <string name="title_tg_channel">Telegram channel</string>
 
 
-    <string name="title_pref_auto_update_subscription">Actualización automática de suscripciones</string>
-    <string name="summary_pref_auto_update_subscription">Actualiza suscripciones automáticamente en segundo plano</string>
-    <string name="title_pref_auto_update_interval">Intervalo de actualización (minutos, mínimo 15)</string>
-
     <string name="title_core_loglevel">Log Level</string>
     <string name="title_outbound_domain_resolve_method">Outbound domain pre-resolve method</string>
     <string name="title_mode">Modo</string>
@@ -269,18 +265,6 @@
     <string name="logcat_copy">Copy</string>
     <string name="logcat_clear">Clear</string>
     <string name="title_service_restart">Reiniciar servicio</string>
-    <string name="title_sub_setting">Configurar suscripción</string>
-    <string name="sub_setting_remarks">Nombre</string>
-    <string name="sub_setting_url">URL (opcional)</string>
-    <string name="sub_setting_user_agent">User Agent</string>
-    <string name="sub_setting_filter">Filtro de servidores</string>
-    <string name="sub_setting_enable">Activar actualización</string>
-    <string name="sub_auto_update">Actualización automática</string>
-    <string name="sub_allow_insecure_url">Permitir dirección HTTP insegura</string>
-    <string name="sub_setting_pre_profile">Previous proxy config remarks</string>
-    <string name="sub_setting_next_profile">Next proxy config remarks</string>
-    <string name="sub_setting_pre_profile_tip">The config remarks exist and are unique</string>
-    <string name="title_sub_update">Actualizar suscripción</string>
     <string name="title_ping_all_server">Ping rápido</string>
     <string name="title_real_ping_all_server">Latencia real</string>
     <string name="title_user_asset_setting">Asset files</string>
@@ -387,21 +371,12 @@
     <string name="update_checking_for_update">Checking for update…</string>
 
     <string name="title_policy_group_type">Policy group type</string>
-    <string name="title_policy_group_subscription_id">From subscription group</string>
-    <string name="title_policy_group_subscription_filter">Remarks regular filter</string>
 
     <!-- BackupActivity -->
     <string name="title_configuration_backup_restore">Backup &amp; Restore</string>
     <string name="title_configuration_backup">Backup config</string>
     <string name="title_configuration_restore">Restore config</string>
     <string name="title_configuration_share">Share config</string>
-    <string name="title_webdav_config_setting">WebDAV Settings</string>
-    <string name="title_webdav_config_setting_unknown">Please configure WebDAV first.</string>
-    <string name="title_webdav_url">WebDAV server URL</string>
-    <string name="title_webdav_user">Username</string>
-    <string name="title_webdav_pass">Password</string>
-    <string name="title_webdav_remote_path">Remote directory (optional)</string>
-
     <string-array name="share_method">
         <item>Código QR</item>
         <item>Copiar al portapapeles</item>

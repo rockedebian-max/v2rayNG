@@ -67,7 +67,7 @@ class UserAssetActivity : HelperBaseActivity() {
     // Use when to streamline the option selection
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.add_file -> showFileChooser().let { true }
-        R.id.add_url -> startActivity(Intent(this, UserAssetUrlActivity::class.java)).let { true }
+        R.id.add_url -> toast(R.string.toast_failure).let { true }
         R.id.add_qrcode -> importAssetFromQRcode().let { true }
         R.id.download_file -> downloadGeoFiles().let { true }
         else -> super.onOptionsItemSelected(item)
@@ -156,11 +156,7 @@ class UserAssetActivity : HelperBaseActivity() {
                 toast(R.string.toast_invalid_url)
                 return false
             }
-            // Send URL to UserAssetUrlActivity for Processing
-            startActivity(
-                Intent(this, UserAssetUrlActivity::class.java)
-                    .putExtra(UserAssetUrlActivity.ASSET_URL_QRCODE, url)
-            )
+            toast(R.string.toast_failure)
         } catch (e: Exception) {
             Log.e(AppConfig.TAG, "Failed to import asset from URL", e)
             return false
@@ -205,10 +201,7 @@ class UserAssetActivity : HelperBaseActivity() {
 
     private inner class ActivityAdapterListener : BaseAdapterListener {
         override fun onEdit(guid: String, position: Int) {
-            startActivity(
-                Intent(ownerActivity, UserAssetUrlActivity::class.java)
-                    .putExtra("assetId", guid)
-            )
+            // UserAssetUrlActivity removed — editing not available
         }
 
         override fun onRemove(guid: String, position: Int) {

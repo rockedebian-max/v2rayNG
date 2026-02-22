@@ -17,7 +17,6 @@ import com.v2ray.ang.R
 import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.ProfileItem
 import com.v2ray.ang.dto.ServersCache
-import com.v2ray.ang.dto.SubscriptionCache
 import com.v2ray.ang.extension.serializable
 import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.extension.toastSuccess
@@ -46,7 +45,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isTesting by lazy { MutableLiveData<Boolean>() }
     val updateListAction by lazy { MutableLiveData<Int>() }
     val updateTestResultAction by lazy { MutableLiveData<String>() }
-    private val tcpingTestScope by lazy { CoroutineScope(Dispatchers.IO) }
+    private var tcpingTestScope = CoroutineScope(Dispatchers.IO)
 
     /**
      * Refer to the official documentation for [registerReceiver](https://developer.android.com/reference/androidx/core/content/ContextCompat#registerReceiver(android.content.Context,android.content.BroadcastReceiver,android.content.IntentFilter,int):
@@ -68,6 +67,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         tcpingTestScope.coroutineContext[Job]?.cancel()
         SpeedtestManager.closeAllTcpSockets()
         serversCache.clear()
+        serverList.clear()
         Log.i(AppConfig.TAG, "Main ViewModel is cleared")
         super.onCleared()
     }
@@ -175,19 +175,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Updates the configuration via subscription for all servers.
-     * @return The number of updated configurations.
-     */
-    fun updateConfigViaSubAll(): Int {
-        if (subscriptionId.isEmpty()) {
-            return AngConfigManager.updateConfigViaSubAll()
-        } else {
-            val subItem = MmkvManager.decodeSubscription(subscriptionId) ?: return 0
-            return AngConfigManager.updateConfigViaSub(SubscriptionCache(subscriptionId, subItem))
-        }
-    }
-
-    /**
      * Exports all servers.
      * @return The number of exported servers.
      */
@@ -274,24 +261,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @return A pair of lists containing the subscription IDs and remarks.
      */
     fun getSubscriptions(context: Context): List<GroupMapItem> {
-        val subscriptions = MmkvManager.decodeSubscriptions()
-        if (subscriptionId.isNotEmpty()
-            && !subscriptions.map { it.guid }.contains(subscriptionId)
-        ) {
-            subscriptionIdChanged("")
-        }
-
-        val groups = mutableListOf<GroupMapItem>()
-        groups.add(
+        return listOf(
             GroupMapItem(
                 id = "",
                 remarks = context.getString(R.string.filter_config_all)
             )
         )
-        subscriptions.forEach { sub ->
-            groups.add(GroupMapItem(id = sub.guid, remarks = sub.subscription.remarks))
-        }
-        return groups
     }
 
     /**

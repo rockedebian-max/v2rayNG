@@ -50,11 +50,12 @@ object NotificationManager {
         outboundTags?.remove(AppConfig.TAG_DIRECT)
 
         speedNotificationJob = CoroutineScope(Dispatchers.IO).launch {
+            val text = StringBuilder(128) // Allocate once, reuse every cycle
             while (isActive) {
                 val queryTime = System.currentTimeMillis()
                 val sinceLastQueryInSeconds = (queryTime - lastQueryTime) / 1000.0
                 var proxyTotal = 0L
-                val text = StringBuilder()
+                text.clear()
                 outboundTags?.forEach {
                     val up = V2RayServiceManager.queryStats(it, AppConfig.UPLINK)
                     val down = V2RayServiceManager.queryStats(it, AppConfig.DOWNLINK)

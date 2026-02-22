@@ -712,50 +712,8 @@ object V2rayConfigManager {
      * @return true if additional outbounds were configured successfully, false otherwise
      */
     private fun getMoreOutbounds(v2rayConfig: V2rayConfig, subscriptionId: String): Boolean {
-        //fragment proxy
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_FRAGMENT_ENABLED, false) == true) {
-            return false
-        }
-
-        if (subscriptionId.isEmpty()) {
-            return false
-        }
-        try {
-            val subItem = MmkvManager.decodeSubscription(subscriptionId) ?: return false
-
-            //current proxy
-            val outbound = v2rayConfig.outbounds[0]
-
-            //Previous proxy
-            val prevNode = SettingsManager.getServerViaRemarks(subItem.prevProfile)
-            if (prevNode != null) {
-                val prevOutbound = convertProfile2Outbound(prevNode)
-                if (prevOutbound != null) {
-                    updateOutboundWithGlobalSettings(prevOutbound)
-                    prevOutbound.tag = AppConfig.TAG_PROXY + "2"
-                    v2rayConfig.outbounds.add(prevOutbound)
-                    outbound.ensureSockopt().dialerProxy = prevOutbound.tag
-                }
-            }
-
-            //Next proxy
-            val nextNode = SettingsManager.getServerViaRemarks(subItem.nextProfile)
-            if (nextNode != null) {
-                val nextOutbound = convertProfile2Outbound(nextNode)
-                if (nextOutbound != null) {
-                    updateOutboundWithGlobalSettings(nextOutbound)
-                    nextOutbound.tag = AppConfig.TAG_PROXY
-                    v2rayConfig.outbounds.add(0, nextOutbound)
-                    outbound.tag = AppConfig.TAG_PROXY + "1"
-                    nextOutbound.ensureSockopt().dialerProxy = outbound.tag
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to configure more outbounds", e)
-            return false
-        }
-
-        return true
+        // Subscription chaining (prev/next proxy) removed — not used in CYBERGUARD
+        return false
     }
 
     /**

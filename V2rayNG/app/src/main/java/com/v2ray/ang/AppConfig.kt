@@ -10,9 +10,6 @@ object AppConfig {
     /** Directory names used in the app's file system. */
     const val DIR_ASSETS = "assets"
 
-    const val  WEBDAV_BACKUP_DIR = "backups"
-    const val  WEBDAV_BACKUP_FILE_NAME = "backup_ng.zip"
-
     /** Legacy configuration keys. */
     const val ANG_CONFIG = "ang_config"
 
@@ -40,10 +37,6 @@ object AppConfig {
     const val PREF_FRAGMENT_PACKETS = "pref_fragment_packets"
     const val PREF_FRAGMENT_LENGTH = "pref_fragment_length"
     const val PREF_FRAGMENT_INTERVAL = "pref_fragment_interval"
-    const val SUBSCRIPTION_AUTO_UPDATE = "pref_auto_update_subscription"
-    const val SUBSCRIPTION_AUTO_UPDATE_INTERVAL = "pref_auto_update_interval"
-    const val SUBSCRIPTION_DEFAULT_UPDATE_INTERVAL = "1440" // Default is 24 hours
-    const val SUBSCRIPTION_UPDATE_TASK_NAME = "subscription_updater"
     const val PREF_SPEED_ENABLED = "pref_speed_enabled"
     const val PREF_CONFIRM_REMOVE = "pref_confirm_remove"
     const val PREF_START_SCAN_IMMEDIATE = "pref_start_scan_immediate"
@@ -159,8 +152,6 @@ object AppConfig {
     /** Notification channel IDs and names. */
     const val RAY_NG_CHANNEL_ID = "RAY_NG_M_CH_ID"
     const val RAY_NG_CHANNEL_NAME = "CyberGuard Background Service"
-    const val SUBSCRIPTION_UPDATE_CHANNEL = "subscription_update_channel"
-    const val SUBSCRIPTION_UPDATE_CHANNEL_NAME = "Subscription Update Service"
 
     /** Protocols Scheme **/
     const val VMESS = "vmess://"
